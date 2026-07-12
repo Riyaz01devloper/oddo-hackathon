@@ -49,3 +49,49 @@
     grid-template-columns: 1fr;
   }
 }
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.header p {
+  margin-top: 6px;
+  color: #64748b;
+}
+
+.authButtons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.loginBtn,
+.registerBtn,
+.logoutBtn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.loginBtn {
+  color: #2563eb;
+  border: 1px solid #2563eb;
+  background: transparent;
+}
+
+.registerBtn {
+  color: white;
+  background: #2563eb;
+  border: 1px solid #2563eb;
+}
+
+.logoutBtn {
+  color: white;
+  background: #dc2626;
+  border: none;
+}

@@ -13,12 +13,9 @@ const validateRegister = asyncHandler(async (req, res, next) => {
         throw new ApiError(400, "Invalid email format");
     }
 
-    if (!validator.isStrongPassword(password)) {
-        throw new ApiError(
-            400,
-            "Password must be strong"
-        );
-    }
+   if (password.length < 6) {
+    throw new ApiError(400, "Password must be at least 6 characters");
+}
 
     next();
 

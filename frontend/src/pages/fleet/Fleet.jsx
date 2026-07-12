@@ -1,55 +1,20 @@
-// pages/fleet/Fleet.jsx
-
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./Fleet.module.css";
 
 import SearchBar from "../../components/fleet/SearchBar/SearchBar";
 import VehicleTable from "../../components/fleet/VehicleTable/VehicleTable";
 import VehicleForm from "../../components/fleet/VehicleForm/VehicleForm";
 
-const initialVehicles = [
-  {
-    id: 1,
-    registrationNumber: "DL01AB1234",
-    vehicleName: "Tata Ace",
-    vehicleType: "Mini Truck",
-    capacity: 900,
-    odometer: 24560,
-    status: "Available",
-  },
-  {
-    id: 2,
-    registrationNumber: "DL02CD5678",
-    vehicleName: "Ashok Leyland",
-    vehicleType: "Truck",
-    capacity: 12000,
-    odometer: 98750,
-    status: "On Trip",
-  },
-  {
-    id: 3,
-    registrationNumber: "DL03EF4321",
-    vehicleName: "Eeco Cargo",
-    vehicleType: "Van",
-    capacity: 700,
-    odometer: 35120,
-    status: "In Shop",
-  },
-  {
-    id: 4,
-    registrationNumber: "DL04GH6789",
-    vehicleName: "Mahindra Bolero Pickup",
-    vehicleType: "Mini Truck",
-    capacity: 1500,
-    odometer: 47210,
-    status: "Available",
-  },
-];
-
-// TODO: Fetch vehicles from backend
+import {
+  getVehicles,
+  createVehicle,
+  updateVehicle,
+  deleteVehicle,
+} from "../../services/vehicleService";
 
 function Fleet() {
-  const [vehicles, setVehicles] = useState(initialVehicles);
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -58,25 +23,71 @@ function Fleet() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
 
+  // GET VEHICLES
+  useEffect(() => {
+    fetchVehicles();
+  }, []);
+
+  const fetchVehicles = async () => {
+    try {
+      setLoading(true);
+
+      const response = await getVehicles();
+
+      // Handles different ApiResponse structures
+      const data = response.data.data || response.data;
+
+      const vehicleList = Array.isArray(data)
+        ? data
+        : data.vehicles || [];
+
+      setVehicles(vehicleList);
+    } catch (error) {
+      console.error(
+        "Error fetching vehicles:",
+        error.response?.data || error.message
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredVehicles = useMemo(() => {
     return vehicles.filter((vehicle) => {
+      const registration =
+        vehicle.registrationNumber || "";
+
+      const name =
+        vehicle.vehicleName || "";
+
       const matchesSearch =
-        vehicle.registrationNumber
+        registration
           .toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
-        vehicle.vehicleName
+        name
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
 
       const matchesType =
-        typeFilter === "All" || vehicle.vehicleType === typeFilter;
+        typeFilter === "All" ||
+        vehicle.vehicleType === typeFilter;
 
       const matchesStatus =
-        statusFilter === "All" || vehicle.status === statusFilter;
+        statusFilter === "All" ||
+        vehicle.status === statusFilter;
 
-      return matchesSearch && matchesType && matchesStatus;
+      return (
+        matchesSearch &&
+        matchesType &&
+        matchesStatus
+      );
     });
-  }, [vehicles, searchTerm, typeFilter, statusFilter]);
+  }, [
+    vehicles,
+    searchTerm,
+    typeFilter,
+    statusFilter,
+  ]);
 
   function handleAddVehicle() {
     setEditingVehicle(null);
@@ -88,46 +99,61 @@ function Fleet() {
     setIsModalOpen(true);
   }
 
-  function handleDelete(id) {
+  // DELETE
+  async function handleDelete(id) {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this vehicle?"
     );
 
     if (!confirmDelete) return;
 
-    // TODO: DELETE vehicle
-
-    setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
-  }
-
-  function handleSave(vehicleData) {
-    if (editingVehicle) {
-      // TODO: PUT vehicle
+    try {
+      await deleteVehicle(id);
 
       setVehicles((prev) =>
-        prev.map((vehicle) =>
-          vehicle.id === editingVehicle.id
-            ? {
-                ...vehicleData,
-                id: editingVehicle.id,
-              }
-            : vehicle
+        prev.filter(
+          (vehicle) =>
+            (vehicle._id || vehicle.id) !== id
         )
       );
-    } else {
-      // TODO: POST new vehicle
+    } catch (error) {
+      console.error(
+        "Delete error:",
+        error.response?.data || error.message
+      );
 
-      setVehicles((prev) => [
-        ...prev,
-        {
-          ...vehicleData,
-          id: Date.now(),
-        },
-      ]);
+      alert("Failed to delete vehicle");
     }
+  }
 
-    setIsModalOpen(false);
-    setEditingVehicle(null);
+  // POST + PUT
+  async function handleSave(vehicleData) {
+    try {
+      if (editingVehicle) {
+        const id =
+          editingVehicle._id || editingVehicle.id;
+
+        await updateVehicle(id, vehicleData);
+      } else {
+        await createVehicle(vehicleData);
+      }
+
+      // Fetch fresh database data
+      await fetchVehicles();
+
+      setIsModalOpen(false);
+      setEditingVehicle(null);
+    } catch (error) {
+      console.error(
+        "Save error:",
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to save vehicle"
+      );
+    }
   }
 
   return (
@@ -136,7 +162,9 @@ function Fleet() {
         <div className={styles.header}>
           <div>
             <h1>Vehicle Registry</h1>
-            <p>Manage all registered vehicles in the fleet.</p>
+            <p>
+              Manage all registered vehicles in the fleet.
+            </p>
           </div>
 
           <button
@@ -156,11 +184,15 @@ function Fleet() {
           onStatusChange={setStatusFilter}
         />
 
-        <VehicleTable
-          vehicles={filteredVehicles}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        {loading ? (
+          <p>Loading vehicles...</p>
+        ) : (
+          <VehicleTable
+            vehicles={filteredVehicles}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        )}
 
         {isModalOpen && (
           <VehicleForm

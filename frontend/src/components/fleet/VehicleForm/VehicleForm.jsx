@@ -3,10 +3,11 @@ import styles from "./VehicleForm.module.css";
 
 const initialForm = {
   registrationNumber: "",
-  vehicleName: "",
-  vehicleType: "Truck",
-  capacity: "",
+  name: "",
+  type: "Truck",
+  maxLoadCapacity: "",
   odometer: "",
+  acquisitionCost: "",
   status: "Available",
 };
 
@@ -15,14 +16,22 @@ function VehicleForm({ vehicle, onSave, onCancel }) {
 
   useEffect(() => {
     if (vehicle) {
-      setFormData(vehicle);
+      setFormData({
+        registrationNumber: vehicle.registrationNumber || "",
+        name: vehicle.name || "",
+        type: vehicle.type || "Truck",
+        maxLoadCapacity: vehicle.maxLoadCapacity || "",
+        odometer: vehicle.odometer || "",
+        acquisitionCost: vehicle.acquisitionCost || "",
+        status: vehicle.status || "Available",
+      });
     } else {
       setFormData(initialForm);
     }
   }, [vehicle]);
 
-  function handleChange(event) {
-    const { name, value } = event.target;
+  function handleChange(e) {
+    const { name, value } = e.target;
 
     setFormData((prev) => ({
       ...prev,
@@ -30,13 +39,14 @@ function VehicleForm({ vehicle, onSave, onCancel }) {
     }));
   }
 
-  function handleSubmit(event) {
-    event.preventDefault();
+  function handleSubmit(e) {
+    e.preventDefault();
 
     onSave({
       ...formData,
-      capacity: Number(formData.capacity),
+      maxLoadCapacity: Number(formData.maxLoadCapacity),
       odometer: Number(formData.odometer),
+      acquisitionCost: Number(formData.acquisitionCost),
     });
   }
 
@@ -49,7 +59,6 @@ function VehicleForm({ vehicle, onSave, onCancel }) {
           <div className={styles.group}>
             <label>Registration Number</label>
             <input
-              type="text"
               name="registrationNumber"
               value={formData.registrationNumber}
               onChange={handleChange}
@@ -60,9 +69,8 @@ function VehicleForm({ vehicle, onSave, onCancel }) {
           <div className={styles.group}>
             <label>Vehicle Name</label>
             <input
-              type="text"
-              name="vehicleName"
-              value={formData.vehicleName}
+              name="name"
+              value={formData.name}
               onChange={handleChange}
               required
             />
@@ -70,10 +78,9 @@ function VehicleForm({ vehicle, onSave, onCancel }) {
 
           <div className={styles.group}>
             <label>Vehicle Type</label>
-
             <select
-              name="vehicleType"
-              value={formData.vehicleType}
+              name="type"
+              value={formData.type}
               onChange={handleChange}
             >
               <option>Truck</option>
@@ -83,20 +90,18 @@ function VehicleForm({ vehicle, onSave, onCancel }) {
           </div>
 
           <div className={styles.group}>
-            <label>Capacity</label>
-
+            <label>Max Load Capacity (kg)</label>
             <input
               type="number"
-              name="capacity"
-              value={formData.capacity}
+              name="maxLoadCapacity"
+              value={formData.maxLoadCapacity}
               onChange={handleChange}
               required
             />
           </div>
 
           <div className={styles.group}>
-            <label>Odometer</label>
-
+            <label>Odometer (km)</label>
             <input
               type="number"
               name="odometer"
@@ -107,17 +112,27 @@ function VehicleForm({ vehicle, onSave, onCancel }) {
           </div>
 
           <div className={styles.group}>
-            <label>Status</label>
+            <label>Acquisition Cost</label>
+            <input
+              type="number"
+              name="acquisitionCost"
+              value={formData.acquisitionCost}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
+          <div className={styles.group}>
+            <label>Status</label>
             <select
               name="status"
               value={formData.status}
               onChange={handleChange}
             >
-              <option>Available</option>
-              <option>On Trip</option>
-              <option>In Shop</option>
-              <option>Retired</option>
+              <option value="Available">Available</option>
+              <option value="OnTrip">On Trip</option>
+              <option value="InShop">In Shop</option>
+              <option value="Retired">Retired</option>
             </select>
           </div>
 
@@ -130,10 +145,7 @@ function VehicleForm({ vehicle, onSave, onCancel }) {
               Cancel
             </button>
 
-            <button
-              type="submit"
-              className={styles.save}
-            >
+            <button type="submit" className={styles.save}>
               Save
             </button>
           </div>
