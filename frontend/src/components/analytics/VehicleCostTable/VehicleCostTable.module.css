@@ -1,0 +1,28 @@
+.wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 14px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.table th {
+  background: #f8fafc;
+  color: #374151;
+  font-weight: 600;
+}
+
+.table tbody tr:hover {
+  background: #fafafa;
+}

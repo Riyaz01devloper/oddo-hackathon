@@ -1,0 +1,66 @@
+.wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 14px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.table th {
+  background: #f8fafc;
+  color: #374151;
+  font-weight: 600;
+}
+
+.table tbody tr:hover {
+  background: #fafafa;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit,
+.delete {
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.edit {
+  background: #2563eb;
+  color: white;
+}
+
+.edit:hover {
+  background: #1d4ed8;
+}
+
+.delete {
+  background: #ef4444;
+  color: white;
+}
+
+.delete:hover {
+  background: #dc2626;
+}
+
+.empty {
+  text-align: center;
+  padding: 24px;
+  color: #6b7280;
+}

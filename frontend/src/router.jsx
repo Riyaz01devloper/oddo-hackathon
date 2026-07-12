@@ -5,6 +5,9 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import Fleet from "./pages/fleet/Fleet";
 import Drivers from "./pages/drivers/Drivers";
 import Trips from "./pages/trips/Trips";
+import Maintenance from "./pages/maintenance/Maintenance";
+import FuelExpenses from "./pages/expenses/FuelExpenses";
+import Analytics from "./pages/analytics/Analytics";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -25,6 +28,18 @@ const router = createBrowserRouter([
       {
         path: "trips",
         element: <Trips />,
+      },
+      {
+        path: "maintenance",
+        element: <Maintenance />,
+      },
+      {
+        path: "expenses",
+        element: <FuelExpenses />,
+      },
+      {
+        path: "reports",
+        element: <Analytics />,
       },
     ],
   },
