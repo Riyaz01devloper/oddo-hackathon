@@ -41,16 +41,16 @@ const driverSchema = new mongoose.Schema({
 })
 */
 
-const registerDriver = async (req, res) => {
+const registerDriver = asyncHandler(async (req, res) => {
     const { name, licenseNumber, licenseCategory, licenseExpiry, phone, safetyScore } = req.body;
 
     if(!name || !licenseNumber || !licenseCategory || !licenseExpiry || !phone) {
-        return res.status(400).json({ message: "All fields are required" });
+        throw new ApiError(400, "All fields are required");
     }
 
     const driverExists = await Driver.findOne({ licenseNumber });
     if(driverExists) {
-        return res.status(400).json({ message: "Driver with this license number already exists" });
+        throw new ApiError(400, "Driver with this license number already exists");
     }
 
     const driver = await Driver.create({
@@ -61,66 +61,84 @@ const registerDriver = async (req, res) => {
         phone,
         safetyScore
     });
-    return res.status(201).json({ message: "Driver registered successfully", driver });
-}
+    return res.status(201).json(
+        new ApiResponse(201, driver, "Driver registered successfully")
+    );
+});
 
-const getAllDrivers = async (req, res) => {
+const getAllDrivers = asyncHandler(async (req, res) => {
     const drivers = await Driver.find().select('-__v').lean();
-    return res.status(200).json({ message: "Drivers fetched successfully", drivers });
-}
+    return res.status(200).json(
+        new ApiResponse(200, drivers, "Drivers fetched successfully")
+    );
+});
 
-const getDriverById = async (req, res) => {
+const getDriverById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const driver = await Driver.findById(id).select('-__v').lean();
     if (!driver) {
-        return res.status(404).json({ message: "Driver not found" });
+        throw new ApiError(404, "Driver not found");
     }
-    return res.status(200).json({ message: "Driver fetched successfully", driver });
-}
+    return res.status(200).json(
+        new ApiResponse(200, driver, "Driver fetched successfully")
+    );
+});
 
-const getAvailableDrivers = async (req, res) => {
+const getAvailableDrivers = asyncHandler(async (req, res) => {
     const availableDrivers = await Driver.find({ status: 'Available' }).select('-__v').lean();
-    return res.status(200).json({ message: "Available drivers fetched successfully", availableDrivers });
-}
+    return res.status(200).json(
+        new ApiResponse(200, availableDrivers, "Available drivers fetched successfully")
+    );
+});
 
-const getOnTripDrivers = async (req, res) => {
+const getOnTripDrivers = asyncHandler(async (req, res) => {
     const onTripDrivers = await Driver.find({ status: 'OnTrip' }).select('-__v').lean();
-    return res.status(200).json({ message: "On trip drivers fetched successfully", onTripDrivers });
-}
+    return res.status(200).json(
+        new ApiResponse(200, onTripDrivers, "On trip drivers fetched successfully")
+    );
+});
 
-const getOffDutyDrivers = async (req, res) => {
+const getOffDutyDrivers = asyncHandler(async (req, res) => {
     const offDutyDrivers = await Driver.find({ status: 'OffDuty' }).select('-__v').lean();
-    return res.status(200).json({ message: "Off duty drivers fetched successfully", offDutyDrivers });
-}
+    return res.status(200).json(
+        new ApiResponse(200, offDutyDrivers, "Off duty drivers fetched successfully")
+    );
+});
 
-const getSuspendedDrivers = async (req, res) => {
+const getSuspendedDrivers = asyncHandler(async (req, res) => {
     const suspendedDrivers = await Driver.find({ status: 'Suspended' }).select('-__v').lean();
-    return res.status(200).json({ message: "Suspended drivers fetched successfully", suspendedDrivers });
-}
+    return res.status(200).json(
+        new ApiResponse(200, suspendedDrivers, "Suspended drivers fetched successfully")
+    );
+});
 
-const deleteDriver = async (req, res) => {
+const deleteDriver = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const driver = await Driver.findByIdAndDelete(id);
     if (!driver) {
-        return res.status(404).json({ message: "Driver not found" });
+        throw new ApiError(404, "Driver not found");
     }
-    return res.status(200).json({ message: "Driver deleted successfully" });
-}
+    return res.status(200).json(
+        new ApiResponse(200, {}, "Driver deleted successfully")
+    );
+});
 
-const updateDriver = async (req, res) => {
+const updateDriver = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
     const driver = await Driver.findById(id);
     if (!driver) {
-        return res.status(404).json({ message: "Driver not found" });
+        throw new ApiError(404, "Driver not found");
     }
 
     Object.assign(driver, updates);
     await driver.save();
 
-    return res.status(200).json({ message: "Driver updated successfully", driver });
-}
+    return res.status(200).json(
+        new ApiResponse(200, driver, "Driver updated successfully")
+    );
+});
 
 module.exports = {
     registerDriver,

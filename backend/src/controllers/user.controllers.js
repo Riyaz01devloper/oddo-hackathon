@@ -7,6 +7,11 @@ const ApiError = require("../utils/ApiError.js");
 const ApiResponse = require("../utils/ApiResponse.js");
 
 
+const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+};
 
 // Register User
 const registerUser = asyncHandler(async (req, res) => {
@@ -32,6 +37,33 @@ const registerUser = asyncHandler(async (req, res) => {
         role
     });
 
+<<<<<<< HEAD
+    return res.status(201).json(
+        new ApiResponse(
+            201,
+            {
+                id: newuser._id,
+                name: newuser.name,
+                email: newuser.email,
+                role: newuser.role
+            },
+            "User registered successfully"
+        )
+    );
+=======
+    const token = jwt.sign(
+        {
+            id: newuser._id,
+            role: newuser.role
+        },
+        process.env.JWT_SECRET,
+        {
+         expiresIn: process.env.JWT_EXPIRES_IN
+        }
+    );
+
+    res.cookie("token", token, cookieOptions);
+
     return res.status(201).json({
         success: true,
         message: "User registered successfully",
@@ -42,6 +74,7 @@ const registerUser = asyncHandler(async (req, res) => {
             role: newuser.role
         }
     })
+>>>>>>> ac7e55a (vehicles apis fix)
 });
 
 
@@ -55,7 +88,7 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Email and Password are required");
     }
 
-    const user = await User.findOne({ email }).select("-password");
+    const user = await User.findOne({ email });
 
     if (!user) {
         throw new ApiError(404, "User not found");
@@ -80,6 +113,8 @@ const loginUser = asyncHandler(async (req, res) => {
          expiresIn: process.env.JWT_EXPIRES_IN
         }
     );
+
+    res.cookie("token", token, cookieOptions);
 
     return res.status(200).json(
         new ApiResponse(

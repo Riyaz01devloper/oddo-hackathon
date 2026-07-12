@@ -25,4 +25,4 @@ router.get('/:id', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Officer', 
 router.put('/:id', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Officer'), updateVehicle);
 router.delete('/:id', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Officer'), deleteVehicle);
 
-module.exports = router;
+module.exports = router; 
