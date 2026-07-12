@@ -1,12 +1,18 @@
-import './App.css'
+import "./App.css";
+import { Outlet } from "react-router-dom";
+
+import Sidebar from "./components/layout/Sidebar";
 
 function App() {
-
   return (
-    <div>
-      <h1>Welcome to the React App!</h1>
+    <div className="app">
+      <Sidebar />
+
+      <main className="content">
+        <Outlet />
+      </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
