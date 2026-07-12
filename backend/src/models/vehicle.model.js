@@ -10,14 +10,10 @@ const vehicleSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    model: {
+    type: {
         type: String,
         required: true
     },
-    // type: {
-    //     type: String,
-    //     required: true
-    // },
     maxLoadCapacity: {
         type: Number,
         required: true
@@ -32,7 +28,7 @@ const vehicleSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Available', 'On Trip', 'In Shop', 'Retired'],
+        enum: ['Available', 'OnTrip', 'InShop', 'Retired'],
         default: 'Available',
         required: true
     }

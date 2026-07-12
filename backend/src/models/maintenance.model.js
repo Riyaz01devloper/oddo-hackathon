@@ -16,8 +16,8 @@ const maintenanceSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Open', 'In Progress', 'Closed'],
-        default: 'Open',
+        enum: ['InShop', 'Closed'],
+        default: 'InShop',
         required: true
     },
     openedAt: {

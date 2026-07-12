@@ -27,19 +27,10 @@ const tripSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    actualDistance: {
-        type: Number
-    },
     status: {
         type: String,
-        enum: ['Planned', 'In Progress', 'Completed', 'Cancelled'],
-        default: 'Planned'
-    },
-    dispatchedAt: {
-        type: Date
-    },
-    completedAt: {
-        type: Date
+        enum: ['Draft', 'Dispatched', 'Completed', 'Cancelled'],
+        default: 'Draft'
     }
 })
 
