@@ -1,4 +1,5 @@
 
+const mongoose = require("mongoose");
 const validator = require("validator");
 
 const asyncHandler = require("../utils/asyncHandler");
@@ -23,4 +24,21 @@ const validateRegister = asyncHandler(async (req, res, next) => {
 
 });
 
+const validateObjectId = (fieldName = "id") => {
+    return (req, res, next) => {
+        const value = req.params[fieldName] || req.query[fieldName];
+
+        if (value && !mongoose.Types.ObjectId.isValid(value)) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid ${fieldName}`
+            });
+        }
+
+        next();
+    };
+};
+
 module.exports = validateRegister;
+module.exports.validateRegister = validateRegister;
+module.exports.validateObjectId = validateObjectId;

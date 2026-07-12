@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Trip = require('../models/trip.model');
-const FuelLog = require('../models/fuelLog.model');
+const FuelLog = require('../models/fuellog.model');
 const Maintenance = require('../models/maintenance.model');
 const Vehicle = require('../models/vehicle.model');
 

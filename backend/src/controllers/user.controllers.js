@@ -25,21 +25,23 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await User.create({
+    const newuser = await User.create({
         name,
         email,
         password: hashedPassword,
         role
-    }).select("-password");
+    });
 
-    return res.status(201).json(
-        new ApiResponse(
-            201,
-            user,
-            "User registered successfully"
-        )
-    );
-
+    return res.status(201).json({
+        success: true,
+        message: "User registered successfully",
+        user: {
+            id: newuser._id,
+            name: newuser.name,
+            email: newuser.email,
+            role: newuser.role
+        }
+    })
 });
 
 
