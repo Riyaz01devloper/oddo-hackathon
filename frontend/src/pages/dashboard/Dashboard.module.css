@@ -1,0 +1,51 @@
+/* pages/dashboard/Dashboard.module.css */
+
+.dashboard {
+  padding: 2rem;
+  background: #f5f7fb;
+  min-height: 100vh;
+}
+
+.header {
+  margin-bottom: 1.8rem;
+}
+
+.header h1 {
+  font-size: 2rem;
+  color: #1f2937;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.section {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+}
+
+.section h2 {
+  margin-bottom: 1.5rem;
+  color: #1f2937;
+}
+
+@media (max-width: 992px) {
+  .cardGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard {
+    padding: 1rem;
+  }
+
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+}
