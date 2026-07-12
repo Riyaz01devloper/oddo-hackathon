@@ -8,7 +8,17 @@ import Trips from "./pages/trips/Trips";
 import Maintenance from "./pages/maintenance/Maintenance";
 import FuelExpenses from "./pages/expenses/FuelExpenses";
 import Analytics from "./pages/analytics/Analytics";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 const router = createBrowserRouter([
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
+  },
   {
     path: "/",
     element: <App />,
