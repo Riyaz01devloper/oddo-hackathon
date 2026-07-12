@@ -30,12 +30,17 @@ const registerUser = asyncHandler(async (req, res) => {
         email,
         password: hashedPassword,
         role
-    }).select("-password");
+    });
 
     return res.status(201).json(
         new ApiResponse(
             201,
-            user,
+            user= {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            },
             "User registered successfully"
         )
     );
