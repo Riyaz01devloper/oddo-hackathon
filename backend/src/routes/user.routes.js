@@ -9,7 +9,7 @@ const ApiResponse = require('../utils/ApiResponse.js');
 
 router.post('/register', validateRegister, registerUser);
 router.post('/login', loginUser);
-router.post('/logout', verifyJWT, logoutUser);
+router.delete('/logout', verifyJWT, logoutUser);
 router.get('/profile', verifyJWT, authorizeRoles('Fleet Manager', 'Driver', 'Safety Officer', 'Financial Analyst'), (req, res) => {
     res.status(200).json(
         new ApiResponse(200, req.user, "User profile fetched successfully")

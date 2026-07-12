@@ -6,8 +6,20 @@ const ApiResponse = require("../utils/ApiResponse.js");
 const registerVehicle = asyncHandler(async (req, res) => {
     const { registrationNumber, name, type, maxLoadCapacity, odometer, acquisitionCost } = req.body;
 
+<<<<<<< HEAD
     if(!registrationNumber || !name || !type || !maxLoadCapacity || !odometer || !acquisitionCost) {
         throw new ApiError(400, "All fields are required");
+=======
+    if (
+        registrationNumber == null || registrationNumber === '' ||
+        name == null || name === '' ||
+        type == null || type === '' ||
+        maxLoadCapacity == null ||
+        odometer == null ||
+        acquisitionCost == null
+    ) {
+        return res.status(400).json({ message: "All fields are required" });
+>>>>>>> ac7e55a (vehicles apis fix)
     }
 
     const vehicleExists = await Vehicle.findOne({ registrationNumber });
