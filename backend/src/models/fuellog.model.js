@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const fuelLogSchema = new mongoose.Schema({
-
     vehicle: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Vehicle",
@@ -35,5 +34,5 @@ const fuelLogSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-const FuelLog = mongoose.model("FuelLog", fuelLogSchema);
+const FuelLog = mongoose.models.FuelLog || mongoose.model("FuelLog", fuelLogSchema);
 module.exports = FuelLog;
