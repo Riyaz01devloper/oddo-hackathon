@@ -1,178 +1,128 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import styles from "./Register.module.css";
-
-const initialForm = {
-  name: "",
-  email: "",
-  password: "",
-  role: "",
-};
+import { useNavigate, Link } from "react-router-dom";
+import api from "../../services/api";
 
 function Register() {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState(initialForm);
-  const [errors, setErrors] = useState({});
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "Driver",
+  });
 
-  function handleChange(e) {
-    const { name, value } = e.target;
+  const [error, setError] = useState("");
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  }
-
-  function validate() {
-    const validationErrors = {};
-
-    if (!formData.name.trim()) {
-      validationErrors.name = "Full name is required.";
-    }
-
-    if (!formData.email.trim()) {
-      validationErrors.email = "Email is required.";
-    }
-
-    if (!formData.password.trim()) {
-      validationErrors.password = "Password is required.";
-    }
-
-    if (!formData.role) {
-      validationErrors.role = "Role is required.";
-    }
-
-    setErrors(validationErrors);
-
-    return Object.keys(validationErrors).length === 0;
-  }
-
-  function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    if (!validate()) return;
-
-    // TODO: POST /register
-
-    navigate("/login");
-  }
+    try {
+      await api.post("/users/register", form);
+      navigate("/login");
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Registration failed"
+      );
+    }
+  };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.left}>
-        <div className={styles.brand}>
-          <h1>TransitOps</h1>
+    <div style={styles.page}>
+      <form style={styles.form} onSubmit={handleSubmit}>
+        <h1>Register</h1>
 
-          <p>Smart Transport Operations Platform</p>
+        {error && <p style={styles.error}>{error}</p>}
 
-          <div className={styles.roles}>
-            <h3>Available Roles</h3>
+        <input
+          style={styles.input}
+          placeholder="Name"
+          onChange={(e) =>
+            setForm({ ...form, name: e.target.value })
+          }
+          required
+        />
 
-            <ul>
-              <li>Fleet Manager</li>
-              <li>Driver</li>
-              <li>Safety Officer</li>
-              <li>Financial Analyst</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+        <input
+          style={styles.input}
+          type="email"
+          placeholder="Email"
+          onChange={(e) =>
+            setForm({ ...form, email: e.target.value })
+          }
+          required
+        />
 
-      <div className={styles.right}>
-        <div className={styles.card}>
-          <h2>Create Account</h2>
+        <input
+          style={styles.input}
+          type="password"
+          placeholder="Strong Password"
+          onChange={(e) =>
+            setForm({ ...form, password: e.target.value })
+          }
+          required
+        />
 
-          <form onSubmit={handleSubmit}>
-            <div className={styles.group}>
-              <label>Full Name</label>
+        <select
+          style={styles.input}
+          value={form.role}
+          onChange={(e) =>
+            setForm({ ...form, role: e.target.value })
+          }
+        >
+          <option>Fleet Manager</option>
+          <option>Driver</option>
+          <option>Safety Officer</option>
+          <option>Financial Analyst</option>
+        </select>
 
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-              />
+        <button style={styles.button} type="submit">
+          Register
+        </button>
 
-              {errors.name && (
-                <span className={styles.error}>
-                  {errors.name}
-                </span>
-              )}
-            </div>
-
-            <div className={styles.group}>
-              <label>Email Address</label>
-
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-
-              {errors.email && (
-                <span className={styles.error}>
-                  {errors.email}
-                </span>
-              )}
-            </div>
-
-            <div className={styles.group}>
-              <label>Password</label>
-
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-
-              {errors.password && (
-                <span className={styles.error}>
-                  {errors.password}
-                </span>
-              )}
-            </div>
-
-            <div className={styles.group}>
-              <label>Role</label>
-
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-              >
-                <option value="">Select Role</option>
-                <option>Fleet Manager</option>
-                <option>Driver</option>
-                <option>Safety Officer</option>
-                <option>Financial Analyst</option>
-              </select>
-
-              {errors.role && (
-                <span className={styles.error}>
-                  {errors.role}
-                </span>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              className={styles.button}
-            >
-              Create Account
-            </button>
-          </form>
-
-          <p className={styles.footer}>
-            Already have an account?{" "}
-            <Link to="/login">Login</Link>
-          </p>
-        </div>
-      </div>
+        <p>
+          Already registered?{" "}
+          <Link to="/login">Login</Link>
+        </p>
+      </form>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "#f4f6f8",
+  },
+  form: {
+    width: "350px",
+    padding: "30px",
+    background: "white",
+    borderRadius: "12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "15px",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+  },
+  input: {
+    padding: "12px",
+    fontSize: "16px",
+  },
+  button: {
+    padding: "12px",
+    cursor: "pointer",
+    background: "#2563eb",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+  },
+  error: {
+    color: "red",
+  },
+};
 
 export default Register;

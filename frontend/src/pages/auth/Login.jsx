@@ -1,137 +1,115 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import styles from "./Login.module.css";
-
-const initialForm = {
-  email: "",
-  password: "",
-  rememberMe: false,
-};
+import { useNavigate, Link } from "react-router-dom";
+import api from "../../services/api";
 
 function Login() {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState(initialForm);
-  const [errors, setErrors] = useState({});
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
 
-  function handleChange(e) {
-    const { name, value, type, checked } = e.target;
+  const [error, setError] = useState("");
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  }
-
-  function validate() {
-    const validationErrors = {};
-
-    if (!formData.email.trim()) {
-      validationErrors.email = "Email is required.";
-    }
-
-    if (!formData.password.trim()) {
-      validationErrors.password = "Password is required.";
-    }
-
-    setErrors(validationErrors);
-
-    return Object.keys(validationErrors).length === 0;
-  }
-
-  function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    if (!validate()) return;
+    try {
+      const response = await api.post("/users/login", form);
 
-    // TODO: POST /login
+      const token = response.data.data.token;
 
-    navigate("/");
-  }
+      localStorage.setItem("token", token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.data.data.user)
+      );
+
+      navigate("/");
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Login failed"
+      );
+    }
+  };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.left}>
-        <div className={styles.brand}>
-          <h1>TransitOps</h1>
+    <div style={styles.page}>
+      <form style={styles.form} onSubmit={handleSubmit}>
+        <h1>Login</h1>
 
-          <p>Smart Transport Operations Platform</p>
+        {error && <p style={styles.error}>{error}</p>}
 
-          <div className={styles.roles}>
-            <h3>Available Roles</h3>
+        <input
+          style={styles.input}
+          type="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={(e) =>
+            setForm({ ...form, email: e.target.value })
+          }
+          required
+        />
 
-            <ul>
-              <li>Fleet Manager</li>
-              <li>Driver</li>
-              <li>Safety Officer</li>
-              <li>Financial Analyst</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+        <input
+          style={styles.input}
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={(e) =>
+            setForm({ ...form, password: e.target.value })
+          }
+          required
+        />
 
-      <div className={styles.right}>
-        <div className={styles.card}>
-          <h2>Sign In</h2>
+        <button style={styles.button} type="submit">
+          Login
+        </button>
 
-          <form onSubmit={handleSubmit}>
-            <div className={styles.group}>
-              <label>Email Address</label>
-
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-
-              {errors.email && (
-                <span className={styles.error}>{errors.email}</span>
-              )}
-            </div>
-
-            <div className={styles.group}>
-              <label>Password</label>
-
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-
-              {errors.password && (
-                <span className={styles.error}>{errors.password}</span>
-              )}
-            </div>
-
-            <label className={styles.checkbox}>
-              <input
-                type="checkbox"
-                name="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleChange}
-              />
-
-              Remember Me
-            </label>
-
-            <button
-              type="submit"
-              className={styles.button}
-            >
-              Sign In
-            </button>
-          </form>
-
-          <p className={styles.footer}>
-            Don't have an account?{" "}
-            <Link to="/register">Register</Link>
-          </p>
-        </div>
-      </div>
+        <p>
+          Don't have an account?{" "}
+          <Link to="/register">Register</Link>
+        </p>
+      </form>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "#f4f6f8",
+  },
+  form: {
+    width: "350px",
+    padding: "30px",
+    background: "white",
+    borderRadius: "12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "15px",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+  },
+  input: {
+    padding: "12px",
+    fontSize: "16px",
+  },
+  button: {
+    padding: "12px",
+    cursor: "pointer",
+    background: "#2563eb",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+  },
+  error: {
+    color: "red",
+  },
+};
 
 export default Login;

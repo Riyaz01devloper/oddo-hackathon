@@ -1,16 +1,23 @@
 import { createBrowserRouter } from "react-router-dom";
 
 import App from "./App";
+
+// Main Pages
 import Dashboard from "./pages/dashboard/Dashboard";
 import Fleet from "./pages/fleet/Fleet";
 import Drivers from "./pages/drivers/Drivers";
 import Trips from "./pages/trips/Trips";
+import Expenses from "./pages/expenses/Expenses";
 import Maintenance from "./pages/maintenance/Maintenance";
-import FuelExpenses from "./pages/expenses/FuelExpenses";
-import Analytics from "./pages/analytics/Analytics";
+import Reports from "./pages/reports/Reports";
+import Settings from "./pages/settings/Settings";
+
+// Auth Pages
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+
 const router = createBrowserRouter([
+  // AUTH
   {
     path: "/login",
     element: <Login />,
@@ -19,6 +26,8 @@ const router = createBrowserRouter([
     path: "/register",
     element: <Register />,
   },
+
+  // MAIN APPLICATION
   {
     path: "/",
     element: <App />,
@@ -40,16 +49,20 @@ const router = createBrowserRouter([
         element: <Trips />,
       },
       {
+        path: "expenses",
+        element: <Expenses />,
+      },
+      {
         path: "maintenance",
         element: <Maintenance />,
       },
       {
-        path: "expenses",
-        element: <FuelExpenses />,
+        path: "reports",
+        element: <Reports />,
       },
       {
-        path: "reports",
-        element: <Analytics />,
+        path: "settings",
+        element: <Settings />,
       },
     ],
   },
