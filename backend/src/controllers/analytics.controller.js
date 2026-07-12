@@ -3,13 +3,16 @@ const Trip = require('../models/trip.model');
 const FuelLog = require('../models/fuellog.model');
 const Maintenance = require('../models/maintenance.model');
 const Vehicle = require('../models/vehicle.model');
+const asyncHandler = require("../utils/asyncHandler.js");
+const ApiError = require("../utils/ApiError.js");
+const ApiResponse = require("../utils/ApiResponse.js");
 
 const getAggregateTotal = (result, field) => result?.[0]?.[field] ?? 0;
 
-const fuelEfficiency = async (req, res) => {
+const fuelEfficiency = asyncHandler(async (req, res) => {
     const vehicleId = req.params.vehicleId || req.query.vehicleId;
     if (vehicleId && !mongoose.Types.ObjectId.isValid(vehicleId)) {
-        return res.status(400).json({ message: 'Invalid vehicle id' });
+        throw new ApiError(400, 'Invalid vehicle id');
     }
 
     const matchStage = vehicleId ? { vehicle: new mongoose.Types.ObjectId(vehicleId) } : {};
@@ -49,21 +52,24 @@ const fuelEfficiency = async (req, res) => {
     const fuel = getAggregateTotal(totalFuel, 'totalFuel');
     const fuelEfficiency = fuel === 0 ? 0 : distance / fuel;
 
-    return res.status(200).json({ fuelEfficiency });
-}
+    return res.status(200).json(
+        new ApiResponse(200, { fuelEfficiency }, "Fuel efficiency calculated successfully")
+    );
+});
 
-
-const fleetUtilization = async (req, res) => {
+const fleetUtilization = asyncHandler(async (req, res) => {
     const totalVehicles = await Vehicle.countDocuments();
 
-    const activeVehicles =await Vehicle.countDocuments({status:"OnTrip"});
+    const activeVehicles = await Vehicle.countDocuments({status:"OnTrip"});
 
     const fleetUtilization = totalVehicles === 0 ? 0 : (activeVehicles/totalVehicles)*100;
 
-    return res.status(200).json({ fleetUtilization });
-}
+    return res.status(200).json(
+        new ApiResponse(200, { fleetUtilization }, "Fleet utilization calculated successfully")
+    );
+});
 
-const operationalCost = async (req, res) => {
+const operationalCost = asyncHandler(async (req, res) => {
     const fuelCost = await FuelLog.aggregate([
         { $group:{ _id:null, fuelCost:{ $sum:"$cost" }}}
     ]);
@@ -74,13 +80,15 @@ const operationalCost = async (req, res) => {
 
     const totalCost = getAggregateTotal(fuelCost, 'fuelCost') + getAggregateTotal(maintenanceCost, 'maintenanceCost');
 
-    return res.status(200).json({ totalCost });
-}
+    return res.status(200).json(
+        new ApiResponse(200, { totalCost }, "Operational cost calculated successfully")
+    );
+});
 
-const vehicleROI = async (req, res) => {
+const vehicleROI = asyncHandler(async (req, res) => {
     const vehicleId = req.params.vehicleId || req.query.vehicleId;
     if (vehicleId && !mongoose.Types.ObjectId.isValid(vehicleId)) {
-        return res.status(400).json({ message: 'Invalid vehicle id' });
+        throw new ApiError(400, 'Invalid vehicle id');
     }
 
     const matchStage = vehicleId ? { vehicle: new mongoose.Types.ObjectId(vehicleId) } : {};
@@ -104,8 +112,10 @@ const vehicleROI = async (req, res) => {
     const cost = getAggregateTotal(fuelCost, 'totalFuelCost') + getAggregateTotal(maintenanceCost, 'totalMaintenanceCost');
     const vehicleROI = cost === 0 ? 0 : ((revenue - cost) / cost) * 100;
 
-    return res.status(200).json({ vehicleROI });
-}
+    return res.status(200).json(
+        new ApiResponse(200, { vehicleROI }, "Vehicle ROI calculated successfully")
+    );
+});
 
 module.exports = {
     fuelEfficiency,

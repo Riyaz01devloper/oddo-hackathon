@@ -12,6 +12,7 @@ const expenseRoutes = require('./routes/expense.routes.js');
 const fuelRoutes = require('./routes/fuel.routes.js');
 const maintenanceRoutes = require('./routes/maintenance.routes.js');
 const reportRoutes = require('./routes/report.routes.js');
+const ApiResponse = require('./utils/ApiResponse.js');
 
 app.use('/api/users', userRoutes);
 app.use('/api/drivers', driverRoutes);
@@ -24,18 +25,22 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', reportRoutes);
 
 app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'Route not found'
-    });
+    res.status(404).json(
+        new ApiResponse(404, null, 'Route not found')
+    );
 });
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
+    const message = err.message || 'Internal server error';
+    const errors = err.errors || [];
+    
     res.status(statusCode).json({
+        statusCode,
+        data: null,
+        message,
         success: false,
-        message: err.message || 'Internal server error',
-        errors: err.errors || []
+        errors
     });
 });
 

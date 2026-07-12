@@ -32,16 +32,18 @@ const registerUser = asyncHandler(async (req, res) => {
         role
     });
 
-    return res.status(201).json({
-        success: true,
-        message: "User registered successfully",
-        user: {
-            id: newuser._id,
-            name: newuser.name,
-            email: newuser.email,
-            role: newuser.role
-        }
-    })
+    return res.status(201).json(
+        new ApiResponse(
+            201,
+            {
+                id: newuser._id,
+                name: newuser.name,
+                email: newuser.email,
+                role: newuser.role
+            },
+            "User registered successfully"
+        )
+    );
 });
 
 
