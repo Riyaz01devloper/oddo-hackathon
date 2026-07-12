@@ -27,6 +27,10 @@ const tripSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    revenue:{
+        type:Number,
+        required:true
+    },
     status: {
         type: String,
         enum: ['Draft', 'Dispatched', 'Completed', 'Cancelled'],
