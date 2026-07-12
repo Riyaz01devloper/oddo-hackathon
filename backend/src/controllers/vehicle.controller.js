@@ -104,6 +104,21 @@ const deleteVehicle = async (req, res) => {
     return res.status(200).json({ message: "Vehicle deleted successfully" });
 }
 
+const updateVehicle = async (req, res) => {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const vehicle = await Vehicle.findById(id);
+    if (!vehicle) {
+        return res.status(404).json({ message: "Vehicle not found" });
+    }
+
+    Object.assign(vehicle, updates);
+    await vehicle.save();
+
+    return res.status(200).json({ message: "Vehicle updated successfully", vehicle });
+}
+
 module.exports = {
     registerVehicle,
     getAllVehicles,
@@ -112,5 +127,6 @@ module.exports = {
     getOnTripVehicles,
     getInShopVehicles,
     getRetiredVehicles,
-    deleteVehicle
+    deleteVehicle,
+    updateVehicle
 }

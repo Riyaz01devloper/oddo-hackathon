@@ -1,6 +1,9 @@
 const Trip = require("../models/trip.model.js");
 const Vehicle = require("../models/vehicle.model.js");
 const Driver = require("../models/driver.model.js");
+const asyncHandler = require("../utils/asyncHandler.js");
+const ApiError = require("../utils/ApiError.js");
+const ApiResponse = require("../utils/ApiResponse.js");
 
 /*
 const tripSchema = new mongoose.Schema({
@@ -38,115 +41,149 @@ const tripSchema = new mongoose.Schema({
 })
 */
 
-const draftTrip = async (req, res) => {
+const getAllTrips = asyncHandler(async (req, res) => {
+    const trips = await Trip.find()
+        .populate('vehicle', 'registrationNumber name')
+        .populate('driver', 'name licenseNumber')
+        .select('-__v')
+        .lean();
+
+    return res.status(200).json(
+        new ApiResponse(200, trips, 'Trips fetched successfully')
+    );
+});
+
+const draftTrip = asyncHandler(async (req, res) => {
     const { source, destination, vehicle, driver, cargoWeight, plannedDistance } = req.body;
 
-    if(!source || !destination || !vehicle || !driver || !cargoWeight || !plannedDistance) {
-        return res.status(400).json({ message: "All fields are required" });
+    if (!source || !destination || !vehicle || !driver || !cargoWeight || !plannedDistance) {
+        throw new ApiError(400, 'All fields are required');
     }
 
     const vehicleExists = await Vehicle.findById(vehicle);
-    if(!vehicleExists) {
-        return res.status(400).json({ message: "Vehicle not found" });
+    if (!vehicleExists) {
+        throw new ApiError(400, 'Vehicle not found');
     }
 
     const driverExists = await Driver.findById(driver);
-    if(!driverExists) {
-        return res.status(400).json({ message: "Driver not found" });
+    if (!driverExists) {
+        throw new ApiError(400, 'Driver not found');
     }
 
-    if(vehicleExists.status !== 'Available') {
-        return res.status(400).json({ message: "Vehicle is not available" });
+    if (vehicleExists.status !== 'Available') {
+        throw new ApiError(400, 'Vehicle is not available');
     }
-    else if(driverExists.status !== 'Available') {
-        return res.status(400).json({ message: "Driver is not available" });
-    }
-    else if(cargoWeight > vehicleExists.maxLoadCapacity) {
-        return res.status(400).json({ message: "Cargo weight exceeds vehicle's maximum load capacity" });
-    }
-    else if(driverExists.licenseExpiry < new Date()) {
-        return res.status(400).json({ message: "Driver's license has expired" });
-    }
-    else{
-        const trip = await Trip.create({
-            source,
-            destination,
-            vehicle,
-            driver,
-            cargoWeight,
-            plannedDistance
-        });
 
-        vehicleExists.status = 'OnTrip';
-        await vehicleExists.save();
-        driverExists.status = 'OnTrip';
-        await driverExists.save();
-
-        res.status(201).json(trip);
+    if (driverExists.status !== 'Available') {
+        throw new ApiError(400, 'Driver is not available');
     }
-}
 
-const dispatchTrip = async (req, res) => {
+    if (cargoWeight > vehicleExists.maxLoadCapacity) {
+        throw new ApiError(400, 'Cargo weight exceeds vehicle\'s maximum load capacity');
+    }
+
+    if (driverExists.licenseExpiry < new Date()) {
+        throw new ApiError(400, 'Driver\'s license has expired');
+    }
+
+    const trip = await Trip.create({
+        source,
+        destination,
+        vehicle,
+        driver,
+        cargoWeight,
+        plannedDistance
+    });
+
+    vehicleExists.status = 'OnTrip';
+    await vehicleExists.save();
+
+    driverExists.status = 'OnTrip';
+    await driverExists.save();
+
+    return res.status(201).json(
+        new ApiResponse(201, trip, 'Trip created successfully')
+    );
+});
+
+const dispatchTrip = asyncHandler(async (req, res) => {
     const { tripId } = req.params;
 
     const trip = await Trip.findById(tripId);
-    if(!trip) {
-        return res.status(404).json({ message: "Trip not found" });
+    if (!trip) {
+        throw new ApiError(404, 'Trip not found');
     }
 
     trip.status = 'Dispatched';
     await trip.save();
 
-    res.status(200).json({ message: "Trip dispatched successfully", trip });
-}
+    return res.status(200).json(
+        new ApiResponse(200, trip, 'Trip dispatched successfully')
+    );
+});
 
-const finishTrip = async (req, res) => {
+const finishTrip = asyncHandler(async (req, res) => {
     const { tripId } = req.params;
 
     const trip = await Trip.findById(tripId);
-    if(!trip) {
-        return res.status(404).json({ message: "Trip not found" });
+    if (!trip) {
+        throw new ApiError(404, 'Trip not found');
     }
 
     const vehicle = await Vehicle.findById(trip.vehicle);
     const driver = await Driver.findById(trip.driver);
 
-    vehicle.status = 'Available';
-    await vehicle.save();
-    driver.status = 'Available';
-    await driver.save();
+    if (vehicle) {
+        vehicle.status = 'Available';
+        await vehicle.save();
+    }
+
+    if (driver) {
+        driver.status = 'Available';
+        await driver.save();
+    }
 
     trip.status = 'Completed';
     await trip.save();
 
-    return res.status(200).json({ message: "Trip completed successfully", trip });
-}
+    return res.status(200).json(
+        new ApiResponse(200, trip, 'Trip completed successfully')
+    );
+});
 
-const cancelTrip = async (req, res) => {
+const cancelTrip = asyncHandler(async (req, res) => {
     const { tripId } = req.params;
 
     const trip = await Trip.findById(tripId);
-    if(!trip) {
-        return res.status(404).json({ message: "Trip not found" });
+    if (!trip) {
+        throw new ApiError(404, 'Trip not found');
     }
 
     const vehicle = await Vehicle.findById(trip.vehicle);
     const driver = await Driver.findById(trip.driver);
 
-    vehicle.status = 'Available';
-    await vehicle.save();
-    driver.status = 'Available';
-    await driver.save();
+    if (vehicle) {
+        vehicle.status = 'Available';
+        await vehicle.save();
+    }
+
+    if (driver) {
+        driver.status = 'Available';
+        await driver.save();
+    }
 
     trip.status = 'Cancelled';
     await trip.save();
 
-    return res.status(200).json({ message: "Trip cancelled successfully", trip });
-}
+    return res.status(200).json(
+        new ApiResponse(200, trip, 'Trip cancelled successfully')
+    );
+});
 
 module.exports = {
+    getAllTrips,
     draftTrip,
     dispatchTrip,
     finishTrip,
     cancelTrip
-}
+};

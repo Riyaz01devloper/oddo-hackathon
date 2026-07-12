@@ -107,6 +107,21 @@ const deleteDriver = async (req, res) => {
     return res.status(200).json({ message: "Driver deleted successfully" });
 }
 
+const updateDriver = async (req, res) => {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const driver = await Driver.findById(id);
+    if (!driver) {
+        return res.status(404).json({ message: "Driver not found" });
+    }
+
+    Object.assign(driver, updates);
+    await driver.save();
+
+    return res.status(200).json({ message: "Driver updated successfully", driver });
+}
+
 module.exports = {
     registerDriver,
     getAllDrivers,
@@ -115,5 +130,6 @@ module.exports = {
     getOnTripDrivers,
     getOffDutyDrivers,
     getSuspendedDrivers,
-    deleteDriver
+    deleteDriver,
+    updateDriver
 }
