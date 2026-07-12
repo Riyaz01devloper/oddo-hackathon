@@ -18,39 +18,32 @@ function Fleet() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
+  const fetchVehicles = async () => {
+  try {
+    setLoading(true);
+
+    // your API call here
+
+  } catch (error) {
+    console.error("Error fetching vehicles:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// GET VEHICLES
+
   const [statusFilter, setStatusFilter] = useState("All");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
 
   // GET VEHICLES
-  useEffect(() => {
-    fetchVehicles();
-  }, []);
 
-  const fetchVehicles = async () => {
-    try {
-      setLoading(true);
-
-      const response = await getVehicles();
-
-      // Handles different ApiResponse structures
-      const data = response.data.data || response.data;
-
-      const vehicleList = Array.isArray(data)
-        ? data
-        : data.vehicles || [];
-
-      setVehicles(vehicleList);
-    } catch (error) {
-      console.error(
-        "Error fetching vehicles:",
-        error.response?.data || error.message
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+// GET VEHICLES
+useEffect(() => {
+  fetchVehicles();
+}, []);
 
   const filteredVehicles = useMemo(() => {
     return vehicles.filter((vehicle) => {
