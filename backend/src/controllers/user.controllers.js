@@ -37,20 +37,6 @@ const registerUser = asyncHandler(async (req, res) => {
         role
     });
 
-<<<<<<< HEAD
-    return res.status(201).json(
-        new ApiResponse(
-            201,
-            {
-                id: newuser._id,
-                name: newuser.name,
-                email: newuser.email,
-                role: newuser.role
-            },
-            "User registered successfully"
-        )
-    );
-=======
     const token = jwt.sign(
         {
             id: newuser._id,
@@ -74,7 +60,6 @@ const registerUser = asyncHandler(async (req, res) => {
             role: newuser.role
         }
     })
->>>>>>> ac7e55a (vehicles apis fix)
 });
 
 
