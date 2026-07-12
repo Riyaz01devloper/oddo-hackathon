@@ -10,6 +10,10 @@ const driverSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    licenseCategory: {
+        type: String,
+        required: true
+    },
     licenseExpiry: {
         type: Date,
         required: true
@@ -26,11 +30,11 @@ const driverSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Available', 'On Trip', 'Off Duty', 'Retired'],
+        enum: ['Available', 'OnTrip', 'OffDuty', 'Suspended'],
         default: 'Available',
         required: true
     }
-});
+})
 
 const Driver = mongoose.model('Driver', driverSchema);
 

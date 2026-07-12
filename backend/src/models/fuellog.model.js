@@ -21,6 +21,16 @@ const fuelLogSchema = new mongoose.Schema({
     date: {
         type: Date,
         default: Date.now
+    },
+
+    tolls:{
+        type: Number,
+        default: 0
+    },
+
+    maintenance: {
+        type: Number,
+        default: 0
     }
 
 }, { timestamps: true });
