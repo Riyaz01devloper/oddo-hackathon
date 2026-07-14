@@ -8,7 +8,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
-  origin: "https://transopt-omega.vercel.app",
+  origin: "https://oddo-hackathon-zeta.vercel.app/",
 //   origin: "http://localhost:5173",
   credentials: true,
 }));
