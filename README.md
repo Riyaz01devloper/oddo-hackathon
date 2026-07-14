@@ -15,7 +15,7 @@
 - Vehicle Search and Filtering
 - Responsive Dashboard
 ## Live demo-
-### Vercel- https://transopt-omega.vercel.app/
+### Vercel- https://oddo-hackathon-zeta.vercel.app/
 
 ## Tech Stack
 
