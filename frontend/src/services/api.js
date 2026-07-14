@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://oddo-hackathon-r1wa.onrender.com",
+  // baseURL: "https://oddo-hackathon-r1wa.onrender.com",
+  baseURL: "http://localhost:8000/api",
   headers: {
     "Content-Type": "application/json",
   },
