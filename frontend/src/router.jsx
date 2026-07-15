@@ -1,4 +1,7 @@
-import { createBrowserRouter } from "react-router-dom";
+import {
+  createBrowserRouter,
+  Navigate,
+} from "react-router-dom";
 
 import App from "./App";
 
@@ -27,13 +30,19 @@ const router = createBrowserRouter([
     element: <Register />,
   },
 
+  // ROOT REDIRECT
+  {
+    path: "/",
+    element: <Navigate to="/dashboard" replace />,
+  },
+
   // MAIN APPLICATION
   {
     path: "/",
     element: <App />,
     children: [
       {
-        index: true,
+        path: "dashboard",
         element: <Dashboard />,
       },
       {
