@@ -4,16 +4,19 @@ const asyncHandler = require("../utils/asyncHandler.js");
 const ApiError = require("../utils/ApiError.js");
 const ApiResponse = require("../utils/ApiResponse.js");
 
-// Create Maintenance
+// CREATE MAINTENANCE
 const createMaintenance = asyncHandler(async (req, res) => {
   const { vehicle, issue, cost } = req.body;
 
   if (!vehicle || !issue || cost === undefined || cost === null) {
-    throw new ApiError(400, "Vehicle, issue and cost are required");
+    throw new ApiError(
+      400,
+      "Vehicle, issue and cost are required"
+    );
   }
 
-  if (Number(cost) < 0) {
-    throw new ApiError(400, "Cost cannot be negative");
+  if (!Number.isFinite(Number(cost)) || Number(cost) < 0) {
+    throw new ApiError(400, "Invalid maintenance cost");
   }
 
   const foundVehicle = await Vehicle.findById(vehicle);
@@ -38,16 +41,16 @@ const createMaintenance = asyncHandler(async (req, res) => {
 
   const maintenance = await Maintenance.create({
     vehicle,
-    issue,
+    issue: String(issue).trim(),
     cost: Number(cost),
   });
 
   foundVehicle.status = "In Shop";
   await foundVehicle.save();
 
-  const populatedMaintenance = await Maintenance.findById(
-    maintenance._id
-  ).populate("vehicle");
+  const populatedMaintenance =
+    await Maintenance.findById(maintenance._id)
+      .populate("vehicle");
 
   return res.status(201).json(
     new ApiResponse(
@@ -59,7 +62,7 @@ const createMaintenance = asyncHandler(async (req, res) => {
 });
 
 
-// Get all Maintenance records
+// GET ALL MAINTENANCE
 const getMaintenance = asyncHandler(async (req, res) => {
   const maintenance = await Maintenance.find()
     .populate("vehicle")
@@ -75,14 +78,18 @@ const getMaintenance = asyncHandler(async (req, res) => {
 });
 
 
-// Get single Maintenance record
+// GET ONE MAINTENANCE
 const getMaintenanceById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const maintenance = await Maintenance.findById(id).populate("vehicle");
+  const maintenance =
+    await Maintenance.findById(id).populate("vehicle");
 
   if (!maintenance) {
-    throw new ApiError(404, "Maintenance record not found");
+    throw new ApiError(
+      404,
+      "Maintenance record not found"
+    );
   }
 
   return res.status(200).json(
@@ -95,18 +102,25 @@ const getMaintenanceById = asyncHandler(async (req, res) => {
 });
 
 
-// Close Maintenance
+// CLOSE MAINTENANCE
 const closeMaintenance = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const maintenance = await Maintenance.findById(id);
+  const maintenance =
+    await Maintenance.findById(id);
 
   if (!maintenance) {
-    throw new ApiError(404, "Maintenance record not found");
+    throw new ApiError(
+      404,
+      "Maintenance record not found"
+    );
   }
 
   if (maintenance.status === "Closed") {
-    throw new ApiError(400, "Maintenance is already closed");
+    throw new ApiError(
+      400,
+      "Maintenance is already closed"
+    );
   }
 
   maintenance.status = "Closed";
@@ -114,16 +128,17 @@ const closeMaintenance = asyncHandler(async (req, res) => {
 
   await maintenance.save();
 
-  const vehicle = await Vehicle.findById(maintenance.vehicle);
+  const vehicle =
+    await Vehicle.findById(maintenance.vehicle);
 
   if (vehicle && vehicle.status !== "Retired") {
     vehicle.status = "Available";
     await vehicle.save();
   }
 
-  const populatedMaintenance = await Maintenance.findById(
-    maintenance._id
-  ).populate("vehicle");
+  const populatedMaintenance =
+    await Maintenance.findById(maintenance._id)
+      .populate("vehicle");
 
   return res.status(200).json(
     new ApiResponse(
@@ -133,7 +148,6 @@ const closeMaintenance = asyncHandler(async (req, res) => {
     )
   );
 });
-
 
 module.exports = {
   createMaintenance,

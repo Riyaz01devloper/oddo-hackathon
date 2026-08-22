@@ -9,7 +9,8 @@ const {
 
 const router = express.Router();
 
-router.route("/")
+router
+  .route("/")
   .get(getMaintenance)
   .post(createMaintenance);
 

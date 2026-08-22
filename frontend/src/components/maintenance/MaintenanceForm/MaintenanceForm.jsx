@@ -15,60 +15,59 @@ function MaintenanceForm({
   onSave,
   onCancel,
 }) {
-  const [formData, setFormData] = useState(initialForm);
+  const [formData, setFormData] =
+    useState(initialForm);
 
-  // Update form whenever record changes
   useEffect(() => {
-    if (record) {
-      setFormData({
-        vehicleId:
-          record.vehicle?._id ||
-          record.vehicleId ||
-          "",
-
-        vehicleName:
-          record.vehicle?.vehicleName ||
-          record.vehicle?.name ||
-          record.vehicleName ||
-          "",
-
-        serviceType:
-          record.issue ||
-          record.serviceType ||
-          "",
-
-        cost:
-          record.cost !== undefined &&
-          record.cost !== null
-            ? record.cost
-            : "",
-
-        date: record.openedAt
-          ? new Date(record.openedAt)
-              .toISOString()
-              .split("T")[0]
-          : record.date || "",
-      });
-    } else {
+    if (!record) {
       setFormData(initialForm);
+      return;
     }
+
+    setFormData({
+      vehicleId:
+        record?.vehicle?._id ||
+        record?.vehicleId ||
+        "",
+
+      vehicleName:
+        record?.vehicle?.vehicleName ||
+        record?.vehicle?.name ||
+        record?.vehicleName ||
+        "",
+
+      serviceType:
+        record?.issue ||
+        record?.serviceType ||
+        "",
+
+      cost:
+        record?.cost ?? "",
+
+      date: record?.openedAt
+        ? new Date(record.openedAt)
+            .toISOString()
+            .split("T")[0]
+        : record?.date || "",
+    });
   }, [record]);
 
   function handleChange(e) {
     const { name, value } = e.target;
 
     if (name === "vehicleId") {
-      const selectedVehicle = vehicles.find(
+      const vehicle = vehicles.find(
         (item) =>
-          String(item?._id) === String(value)
+          String(item?._id) ===
+          String(value)
       );
 
       setFormData((prev) => ({
         ...prev,
         vehicleId: value,
         vehicleName:
-          selectedVehicle?.vehicleName ||
-          selectedVehicle?.name ||
+          vehicle?.vehicleName ||
+          vehicle?.name ||
           "",
       }));
 
@@ -84,17 +83,15 @@ function MaintenanceForm({
   function handleSubmit(e) {
     e.preventDefault();
 
-    const vehicleId = String(
-      formData.vehicleId || ""
-    ).trim();
+    const vehicle =
+      String(formData.vehicleId || "").trim();
 
-    const issue = String(
-      formData.serviceType || ""
-    ).trim();
+    const issue =
+      String(formData.serviceType || "").trim();
 
     const cost = Number(formData.cost);
 
-    if (!vehicleId) {
+    if (!vehicle) {
       alert("Please select a vehicle");
       return;
     }
@@ -113,11 +110,10 @@ function MaintenanceForm({
       return;
     }
 
-    // Send exactly what the backend expects
     onSave({
-      vehicle: vehicleId,
-      issue: issue,
-      cost: cost,
+      vehicle,
+      issue,
+      cost,
     });
   }
 
@@ -126,69 +122,117 @@ function MaintenanceForm({
       onSubmit={handleSubmit}
       className={styles.form}
     >
-      <select
-        name="vehicleId"
-        value={formData.vehicleId}
-        onChange={handleChange}
-        required
-      >
-        <option value="">
-          Select Vehicle
-        </option>
+      <div className={styles.header}>
+        <h2>
+          {record
+            ? "Edit Maintenance"
+            : "Add Maintenance"}
+        </h2>
 
-        {vehicles.map((vehicle) => (
-          <option
-            key={vehicle?._id}
-            value={vehicle?._id}
-          >
-            {vehicle?.vehicleName ||
-              vehicle?.name ||
-              "Unnamed Vehicle"}
-          </option>
-        ))}
-      </select>
+        <p>
+          Record vehicle service details
+        </p>
+      </div>
 
-      <input
-        type="text"
-        name="serviceType"
-        value={formData.serviceType}
-        onChange={handleChange}
-        placeholder="Maintenance issue"
-        required
-      />
+      <div className={styles.fieldGroup}>
+        <label htmlFor="vehicleId">
+          Vehicle
+        </label>
 
-      <input
-        type="number"
-        name="cost"
-        value={formData.cost}
-        onChange={handleChange}
-        min="0"
-        step="0.01"
-        placeholder="Cost"
-        required
-      />
-
-      <input
-        type="date"
-        name="date"
-        value={formData.date}
-        onChange={handleChange}
-      />
-
-      <button type="submit">
-        {record
-          ? "Update Maintenance"
-          : "Save Maintenance"}
-      </button>
-
-      {onCancel && (
-        <button
-          type="button"
-          onClick={onCancel}
+        <select
+          id="vehicleId"
+          name="vehicleId"
+          value={formData.vehicleId}
+          onChange={handleChange}
+          required
         >
-          Cancel
+          <option value="">
+            Select Vehicle
+          </option>
+
+          {vehicles.map((vehicle) => (
+            <option
+              key={vehicle?._id}
+              value={vehicle?._id}
+            >
+              {vehicle?.vehicleName ||
+                vehicle?.name ||
+                "Unnamed Vehicle"}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className={styles.fieldGroup}>
+        <label htmlFor="serviceType">
+          Maintenance Issue
+        </label>
+
+        <input
+          id="serviceType"
+          type="text"
+          name="serviceType"
+          value={formData.serviceType}
+          onChange={handleChange}
+          placeholder="e.g. Engine servicing"
+          required
+        />
+      </div>
+
+      <div className={styles.row}>
+        <div className={styles.fieldGroup}>
+          <label htmlFor="cost">
+            Cost
+          </label>
+
+          <input
+            id="cost"
+            type="number"
+            name="cost"
+            value={formData.cost}
+            onChange={handleChange}
+            min="0"
+            step="0.01"
+            placeholder="₹ 5000"
+            required
+          />
+        </div>
+
+        <div className={styles.fieldGroup}>
+          <label htmlFor="date">
+            Date
+          </label>
+
+          <input
+            id="date"
+            type="date"
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+          />
+        </div>
+      </div>
+
+      <div className={styles.actions}>
+        {onCancel && (
+          <button
+            type="button"
+            className={styles.cancelButton}
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+        )}
+
+        <button
+          type="submit"
+          className={styles.saveButton}
+        >
+          {record
+            ? "Update Maintenance"
+            : "Save Maintenance"}
         </button>
-      )}
+      </div>
     </form>
   );
 }
