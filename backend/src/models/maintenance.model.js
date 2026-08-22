@@ -25,7 +25,9 @@ const maintenanceSchema = new mongoose.Schema({
         default: Date.now
     },
     closedAt: {
-        type: Date
+        type: Date,
+        default:null
+
     }
 })
 

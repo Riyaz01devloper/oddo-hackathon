@@ -1,14 +1,20 @@
-const express = require('express');
-const router = express.Router();
+const express = require("express");
 
 const {
   createMaintenance,
-  closeMaintenance
-} = require('../controllers/maintaince.controller.js');
-const verifyJWT = require('../middlewares/auth.middleware.js');
-const authorizeRoles = require('../middlewares/role.middleware.js');
+  getMaintenance,
+  getMaintenanceById,
+  closeMaintenance,
+} = require("../controllers/maintenance.controller.js");
 
-router.post('/', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Officer'), createMaintenance);
-router.patch('/:id/close', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Officer'), closeMaintenance);
+const router = express.Router();
+
+router.route("/")
+  .get(getMaintenance)
+  .post(createMaintenance);
+
+router.get("/:id", getMaintenanceById);
+
+router.patch("/:id/close", closeMaintenance);
 
 module.exports = router;
