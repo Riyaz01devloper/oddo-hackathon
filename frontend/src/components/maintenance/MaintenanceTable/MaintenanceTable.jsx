@@ -1,7 +1,7 @@
 import styles from "./MaintenanceTable.module.css";
 import StatusBadge from "../../fleet/StatusBadge/StatusBadge";
 
-function MaintenanceTable({ records, onEdit, onDelete }) {
+function MaintenanceTable({ records = [], onEdit, onDelete }) {
   return (
     <div className={styles.wrapper}>
       <table className={styles.table}>
@@ -18,39 +18,70 @@ function MaintenanceTable({ records, onEdit, onDelete }) {
 
         <tbody>
           {records.length > 0 ? (
-            records.map((record) => (
-              <tr key={record.id}>
-                <td>{record.vehicleName}</td>
+            records.map((record) => {
+              const vehicleName =
+                record?.vehicle?.vehicleName ||
+                record?.vehicle?.name ||
+                record?.vehicleName ||
+                "Unknown Vehicle";
 
-                <td>{record.serviceType}</td>
+              const serviceType =
+                record?.issue ||
+                record?.serviceType ||
+                "No issue specified";
 
-                <td>₹{record.cost.toLocaleString()}</td>
+              const cost = Number(record?.cost || 0);
 
-                <td>{record.date}</td>
+              const date = record?.openedAt
+                ? new Date(record.openedAt).toLocaleDateString()
+                : record?.date || "-";
 
-                <td>
-                  <StatusBadge status={record.status} />
-                </td>
+              const status =
+                record?.status || "InShop";
 
-                <td>
-                  <div className={styles.actions}>
-                    <button
-                      className={styles.edit}
-                      onClick={() => onEdit(record)}
-                    >
-                      Edit
-                    </button>
+              const recordId =
+                record?._id || record?.id;
 
-                    <button
-                      className={styles.delete}
-                      onClick={() => onDelete(record.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))
+              return (
+                <tr key={recordId}>
+                  <td>{vehicleName}</td>
+
+                  <td>{serviceType}</td>
+
+                  <td>
+                    ₹{cost.toLocaleString("en-IN")}
+                  </td>
+
+                  <td>{date}</td>
+
+                  <td>
+                    <StatusBadge status={status} />
+                  </td>
+
+                  <td>
+                    <div className={styles.actions}>
+                      <button
+                        className={styles.edit}
+                        onClick={() =>
+                          onEdit?.(record)
+                        }
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        className={styles.delete}
+                        onClick={() =>
+                          onDelete?.(recordId)
+                        }
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
           ) : (
             <tr>
               <td
