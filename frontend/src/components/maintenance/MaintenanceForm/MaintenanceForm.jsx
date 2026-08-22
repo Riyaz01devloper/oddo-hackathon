@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./MaintenanceForm.module.css";
 
 const initialForm = {
@@ -11,41 +11,65 @@ const initialForm = {
 
 function MaintenanceForm({
   record,
-  vehicles,
+  vehicles = [],
   onSave,
   onCancel,
 }) {
-  const [formData, setFormData] = useState(() =>
-    record
-      ? {
-          vehicleId: record.vehicle?._id || record.vehicleId || "",
-          vehicleName:
-            record.vehicle?.vehicleName ||
-            record.vehicleName ||
-            "",
-          serviceType: record.issue || record.serviceType || "",
-          cost: record.cost ?? "",
-          date: record.openedAt
-            ? new Date(record.openedAt)
-                .toISOString()
-                .split("T")[0]
-            : record.date || "",
-        }
-      : initialForm
-  );
+  const [formData, setFormData] = useState(initialForm);
+
+  // Update form whenever record changes
+  useEffect(() => {
+    if (record) {
+      setFormData({
+        vehicleId:
+          record.vehicle?._id ||
+          record.vehicleId ||
+          "",
+
+        vehicleName:
+          record.vehicle?.vehicleName ||
+          record.vehicle?.name ||
+          record.vehicleName ||
+          "",
+
+        serviceType:
+          record.issue ||
+          record.serviceType ||
+          "",
+
+        cost:
+          record.cost !== undefined &&
+          record.cost !== null
+            ? record.cost
+            : "",
+
+        date: record.openedAt
+          ? new Date(record.openedAt)
+              .toISOString()
+              .split("T")[0]
+          : record.date || "",
+      });
+    } else {
+      setFormData(initialForm);
+    }
+  }, [record]);
 
   function handleChange(e) {
     const { name, value } = e.target;
 
     if (name === "vehicleId") {
-      const vehicle = vehicles.find(
-        (item) => String(item._id) === String(value)
+      const selectedVehicle = vehicles.find(
+        (item) =>
+          String(item?._id) === String(value)
       );
 
       setFormData((prev) => ({
         ...prev,
         vehicleId: value,
-        vehicleName: vehicle?.vehicleName || vehicle?.name || "",
+        vehicleName:
+          selectedVehicle?.vehicleName ||
+          selectedVehicle?.name ||
+          "",
       }));
 
       return;
@@ -60,49 +84,66 @@ function MaintenanceForm({
   function handleSubmit(e) {
     e.preventDefault();
 
-    if (!formData.vehicleId) {
+    const vehicleId = String(
+      formData.vehicleId || ""
+    ).trim();
+
+    const issue = String(
+      formData.serviceType || ""
+    ).trim();
+
+    const cost = Number(formData.cost);
+
+    if (!vehicleId) {
       alert("Please select a vehicle");
       return;
     }
 
-    if (!formData.serviceType.trim()) {
+    if (!issue) {
       alert("Please enter the maintenance issue");
       return;
     }
 
     if (
       formData.cost === "" ||
-      Number(formData.cost) < 0
+      !Number.isFinite(cost) ||
+      cost < 0
     ) {
       alert("Please enter a valid cost");
       return;
     }
 
+    // Send exactly what the backend expects
     onSave({
-      vehicle: formData.vehicleId,
-      issue: formData.serviceType.trim(),
-      cost: Number(formData.cost),
+      vehicle: vehicleId,
+      issue: issue,
+      cost: cost,
     });
   }
 
   return (
-    <form onSubmit={handleSubmit} className={styles.form}>
-      {/* Keep your existing JSX fields here */}
-
+    <form
+      onSubmit={handleSubmit}
+      className={styles.form}
+    >
       <select
         name="vehicleId"
         value={formData.vehicleId}
         onChange={handleChange}
         required
       >
-        <option value="">Select Vehicle</option>
+        <option value="">
+          Select Vehicle
+        </option>
 
         {vehicles.map((vehicle) => (
           <option
-            key={vehicle._id}
-            value={vehicle._id}
+            key={vehicle?._id}
+            value={vehicle?._id}
           >
-            {vehicle.vehicleName || vehicle.name}
+            {vehicle?.vehicleName ||
+              vehicle?.name ||
+              "Unnamed Vehicle"}
           </option>
         ))}
       </select>
@@ -122,6 +163,7 @@ function MaintenanceForm({
         value={formData.cost}
         onChange={handleChange}
         min="0"
+        step="0.01"
         placeholder="Cost"
         required
       />
@@ -134,11 +176,16 @@ function MaintenanceForm({
       />
 
       <button type="submit">
-        Save Maintenance
+        {record
+          ? "Update Maintenance"
+          : "Save Maintenance"}
       </button>
 
       {onCancel && (
-        <button type="button" onClick={onCancel}>
+        <button
+          type="button"
+          onClick={onCancel}
+        >
           Cancel
         </button>
       )}
