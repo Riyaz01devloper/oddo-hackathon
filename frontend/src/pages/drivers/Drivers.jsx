@@ -1,47 +1,21 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import styles from "./Drivers.module.css";
 
 import SearchBar from "../../components/drivers/SearchBar/SearchBar";
 import DriverTable from "../../components/drivers/DriverTable/DriverTable";
 import DriverForm from "../../components/drivers/DriverForm/DriverForm";
 
-const initialDrivers = [
-  {
-    id: 1,
-    name: "Rahul Sharma",
-    licenseNumber: "DL123456789",
-    licenseCategory: "LMV",
-    licenseExpiry: "2028-04-15",
-    contactNumber: "9876543210",
-    safetyScore: 95,
-    status: "Available",
-  },
-  {
-    id: 2,
-    name: "Amit Kumar",
-    licenseNumber: "DL987654321",
-    licenseCategory: "HMV",
-    licenseExpiry: "2027-11-20",
-    contactNumber: "9812345678",
-    safetyScore: 89,
-    status: "On Trip",
-  },
-  {
-    id: 3,
-    name: "Rohit Verma",
-    licenseNumber: "DL112233445",
-    licenseCategory: "HMV",
-    licenseExpiry: "2026-09-08",
-    contactNumber: "9898989898",
-    safetyScore: 76,
-    status: "Off Duty",
-  },
-];
-
-// TODO: GET /api/drivers
+import {
+  getDrivers,
+  createDriver,
+  updateDriver,
+  deleteDriver,
+} from "../../services/driverService";
 
 function Drivers() {
-  const [drivers, setDrivers] = useState(initialDrivers);
+  const [drivers, setDrivers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -49,72 +23,164 @@ function Drivers() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState(null);
 
+  // GET ALL DRIVERS
+  const fetchDrivers = async () => {
+    try {
+      setLoading(true);
+
+      const response = await getDrivers();
+
+      console.log("Drivers API response:", response);
+
+      const data =
+        response.data?.data ||
+        response.data ||
+        [];
+
+      setDrivers(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(
+        "Error fetching drivers:",
+        error.response?.data || error.message
+      );
+
+      setDrivers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // LOAD DRIVERS WHEN PAGE OPENS
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadDrivers = async () => {
+      try {
+        const response = await getDrivers();
+
+        if (cancelled) return;
+
+        const data =
+          response.data?.data ||
+          response.data ||
+          [];
+
+        setDrivers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        if (!cancelled) {
+          console.error(
+            "Error fetching drivers:",
+            error.response?.data || error.message
+          );
+
+          setDrivers([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDrivers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // FILTER DRIVERS
   const filteredDrivers = useMemo(() => {
     return drivers.filter((driver) => {
+      const name = driver.name || "";
+      const licenseNumber = driver.licenseNumber || "";
+
       const searchMatch =
-        driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        driver.licenseNumber
+        name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        licenseNumber
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
 
       const statusMatch =
-        statusFilter === "All" || driver.status === statusFilter;
+        statusFilter === "All" ||
+        driver.status === statusFilter;
 
       return searchMatch && statusMatch;
     });
   }, [drivers, searchTerm, statusFilter]);
 
+  // ADD DRIVER
   function handleAdd() {
     setEditingDriver(null);
     setIsModalOpen(true);
   }
 
+  // EDIT DRIVER
   function handleEdit(driver) {
     setEditingDriver(driver);
     setIsModalOpen(true);
   }
 
-  function handleDelete(id) {
+  // DELETE DRIVER
+  async function handleDelete(id) {
     if (!window.confirm("Delete this driver?")) return;
 
-    // TODO: DELETE /api/drivers/:id
+    try {
+      await deleteDriver(id);
 
-    setDrivers((prev) => prev.filter((driver) => driver.id !== id));
+      // Refresh from database
+      await fetchDrivers();
+    } catch (error) {
+      console.error(
+        "Delete driver error:",
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+        "Failed to delete driver"
+      );
+    }
   }
 
-  function handleSave(driverData) {
-    if (editingDriver) {
-      // TODO: PUT /api/drivers/:id
+  // CREATE / UPDATE DRIVER
+  async function handleSave(driverData) {
+    try {
+      if (editingDriver) {
+        const id =
+          editingDriver._id ||
+          editingDriver.id;
 
-      setDrivers((prev) =>
-        prev.map((driver) =>
-          driver.id === editingDriver.id
-            ? {
-                ...driverData,
-                id: editingDriver.id,
-              }
-            : driver
-        )
+        await updateDriver(id, driverData);
+      } else {
+        await createDriver(driverData);
+      }
+
+      // Get fresh data from MongoDB
+      await fetchDrivers();
+
+      setEditingDriver(null);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error(
+        "Save driver error:",
+        error.response?.data || error.message
       );
-    } else {
-      // TODO: POST /api/drivers
 
-      setDrivers((prev) => [
-        ...prev,
-        {
-          ...driverData,
-          id: Date.now(),
-        },
-      ]);
+      alert(
+        error.response?.data?.message ||
+        "Failed to save driver"
+      );
     }
-
-    setEditingDriver(null);
-    setIsModalOpen(false);
   }
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
+
+        {/* HEADER */}
         <div className={styles.header}>
           <div>
             <h1>Drivers</h1>
@@ -129,6 +195,7 @@ function Drivers() {
           </button>
         </div>
 
+        {/* SEARCH */}
         <SearchBar
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -136,12 +203,18 @@ function Drivers() {
           onStatusChange={setStatusFilter}
         />
 
-        <DriverTable
-          drivers={filteredDrivers}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        {/* TABLE */}
+        {loading ? (
+          <p>Loading drivers...</p>
+        ) : (
+          <DriverTable
+            drivers={filteredDrivers}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        )}
 
+        {/* FORM */}
         {isModalOpen && (
           <DriverForm
             driver={editingDriver}
@@ -152,6 +225,7 @@ function Drivers() {
             }}
           />
         )}
+
       </div>
     </div>
   );

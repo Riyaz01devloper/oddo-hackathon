@@ -3,7 +3,11 @@ import styles from "./Maintenance.module.css";
 
 import MaintenanceTable from "../../components/maintenance/MaintenanceTable/MaintenanceTable";
 import MaintenanceForm from "../../components/maintenance/MaintenanceForm/MaintenanceForm";
-
+import {
+  getMaintenance,
+  createMaintenance,
+  updateMaintenance,
+} from "../../services/maintenanceService";
 // TODO: GET /api/maintenance
 const initialMaintenance = [
   {
@@ -58,7 +62,23 @@ function Maintenance() {
 
   const [editingRecord, setEditingRecord] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+const fetchRecords = async () => {
+  try {
+    const response = await getMaintenance();
 
+    const data =
+      response.data?.data ||
+      response.data ||
+      [];
+
+    setRecords(data);
+  } catch (error) {
+    console.error(
+      "Error fetching maintenance records:",
+      error.response?.data || error.message
+    );
+  }
+};
   const filteredRecords = useMemo(() => {
     return records.filter((record) => {
       const matchesSearch =
@@ -76,35 +96,33 @@ function Maintenance() {
     });
   }, [records, search, statusFilter]);
 
-  function handleSave(data) {
+async function handleSave(data) {
+  try {
     if (editingRecord) {
-      // TODO: PUT /api/maintenance/:id
+      const id = editingRecord._id || editingRecord.id;
 
-      setRecords((prev) =>
-        prev.map((record) =>
-          record.id === editingRecord.id
-            ? {
-                ...data,
-                id: editingRecord.id,
-              }
-            : record
-        )
-      );
+      await updateMaintenance(id, data);
     } else {
-      // TODO: POST /api/maintenance
-
-      setRecords((prev) => [
-        ...prev,
-        {
-          ...data,
-          id: Date.now(),
-        },
-      ]);
+      await createMaintenance(data);
     }
+
+    // Fetch latest records from database
+    await fetchRecords();
 
     setEditingRecord(null);
     setIsModalOpen(false);
+  } catch (error) {
+    console.error(
+      "Save maintenance error:",
+      error.response?.data || error.message
+    );
+
+    alert(
+      error.response?.data?.message ||
+      "Failed to save maintenance record"
+    );
   }
+}
 
   function handleDelete(id) {
     if (!window.confirm("Delete this maintenance record?")) return;
