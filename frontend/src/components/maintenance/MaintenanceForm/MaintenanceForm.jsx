@@ -34,8 +34,8 @@ function MaintenanceForm({
     return {
       vehicleId:
         record.vehicle?._id ||
-        record.vehicle ||
         record.vehicleId ||
+        record.vehicle ||
         "",
 
       serviceType:
@@ -139,7 +139,6 @@ function MaintenanceForm({
               value={vehicle._id}
             >
               {vehicle.name ||
-                vehicle.vehicleName ||
                 vehicle.registrationNumber ||
                 "Unnamed Vehicle"}
             </option>

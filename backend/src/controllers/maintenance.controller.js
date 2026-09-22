@@ -40,7 +40,7 @@ const createMaintenance = asyncHandler(async (req, res) => {
   }
 
   const maintenance = await Maintenance.create({
-    vehicle,
+    vehicle,  
     issue: String(issue).trim(),
     cost: Number(cost),
   });
