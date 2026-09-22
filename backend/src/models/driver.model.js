@@ -10,7 +10,10 @@ const driverSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-  
+    licenseCategory: {
+        type: String,
+        required: true
+    },
     licenseExpiry: {
         type: Date,
         required: true
