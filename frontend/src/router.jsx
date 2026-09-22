@@ -16,7 +16,7 @@ import Reports from "./pages/reports/Reports";
 import Settings from "./pages/settings/Settings";
 
 // Auth Pages
-import Login from "./pages/auth/Login";
+import Login from "./pages/auth/login";
 import Register from "./pages/auth/Register";
 
 const router = createBrowserRouter([
