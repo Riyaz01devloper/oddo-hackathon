@@ -26,7 +26,7 @@ function DriverTable({ drivers, onEdit, onDelete }) {
                 <td>{driver.licenseNumber}</td>
                 <td>{driver.licenseCategory}</td>
                 <td>{driver.licenseExpiry}</td>
-                <td>{driver.contactNumber}</td>
+                <td>{driver.phone}</td>
                 <td>{driver.safetyScore}</td>
 
                 <td>
