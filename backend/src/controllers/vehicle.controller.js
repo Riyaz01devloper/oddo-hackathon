@@ -94,7 +94,7 @@ const getOnTripVehicles = async (req, res) => {
   return res.status(200).json({ vehicles });
 };
 
-// IN SHOP
+// INSHOP
 const getInShopVehicles = async (req, res) => {
   const vehicles = await Vehicle.find({ status: "InShop" });
   return res.status(200).json({ vehicles });
