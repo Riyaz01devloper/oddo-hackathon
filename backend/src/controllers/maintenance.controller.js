@@ -32,7 +32,7 @@ const createMaintenance = asyncHandler(async (req, res) => {
     );
   }
 
-  if (foundVehicle.status === "In Shop") {
+  if (foundVehicle.status === "InShop") {
     throw new ApiError(
       400,
       "Vehicle is already in maintenance"
@@ -45,7 +45,7 @@ const createMaintenance = asyncHandler(async (req, res) => {
     cost: Number(cost),
   });
 
-  foundVehicle.status = "In Shop";
+  foundVehicle.status = "InShop";
   await foundVehicle.save();
 
   const populatedMaintenance =
