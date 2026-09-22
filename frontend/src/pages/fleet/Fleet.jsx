@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import styles from "./Fleet.module.css";
 
+import styles from "./Fleet.module.css";
 import SearchBar from "../../components/fleet/SearchBar/SearchBar";
 import VehicleTable from "../../components/fleet/VehicleTable/VehicleTable";
 import VehicleForm from "../../components/fleet/VehicleForm/VehicleForm";
@@ -23,35 +23,34 @@ function Fleet() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
 
-  // GET ALL VEHICLES
-  const fetchVehicles = async () => {
-    try {
-      setLoading(true);
+  // =========================
+  // GET VEHICLES FROM DATABASE
+const fetchVehicles = async () => {
+  try {
+    const response = await getVehicles();
 
-      const response = await getVehicles();
+    console.log("Vehicles API response:", response.data);
 
-      console.log("Vehicles API response:", response);
+    const data =
+      response.data?.vehicles ||
+      response.data?.data ||
+      [];
 
-      const data =
-        response.data?.data ||
-        response.data ||
-        [];
+    setVehicles(Array.isArray(data) ? data : []);
+  } catch (error) {
+    console.error(
+      "Error fetching vehicles:",
+      error.response?.data || error.message
+    );
 
-      setVehicles(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error(
-        "Error fetching vehicles:",
-        error.response?.data || error.message
-      );
+    setVehicles([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
-      setVehicles([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // LOAD VEHICLES WHEN PAGE OPENS
- useEffect(() => {
+  // Load vehicles when page opens
+useEffect(() => {
   let cancelled = false;
 
   const loadVehicles = async () => {
@@ -60,9 +59,11 @@ function Fleet() {
 
       if (cancelled) return;
 
+      console.log("Vehicles API response:", response.data);
+
       const data =
+        response.data?.vehicles ||
         response.data?.data ||
-        response.data ||
         [];
 
       setVehicles(Array.isArray(data) ? data : []);
@@ -72,6 +73,7 @@ function Fleet() {
           "Error fetching vehicles:",
           error.response?.data || error.message
         );
+
         setVehicles([]);
       }
     } finally {
@@ -88,26 +90,23 @@ function Fleet() {
   };
 }, []);
 
+  // =========================
   // FILTER VEHICLES
+  // =========================
   const filteredVehicles = useMemo(() => {
     return vehicles.filter((vehicle) => {
-      const registration =
-        vehicle.registrationNumber || "";
+      const registration = vehicle.registrationNumber || "";
+      const name = vehicle.name || "";
 
-      const name =
-        vehicle.vehicleName || "";
+      const search = searchTerm.toLowerCase();
 
       const matchesSearch =
-        registration
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        name
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
+        registration.toLowerCase().includes(search) ||
+        name.toLowerCase().includes(search);
 
       const matchesType =
         typeFilter === "All" ||
-        vehicle.vehicleType === typeFilter;
+        vehicle.type === typeFilter;
 
       const matchesStatus =
         statusFilter === "All" ||
@@ -126,19 +125,25 @@ function Fleet() {
     statusFilter,
   ]);
 
-  // OPEN ADD VEHICLE MODAL
+  // =========================
+  // ADD VEHICLE
+  // =========================
   function handleAddVehicle() {
     setEditingVehicle(null);
     setIsModalOpen(true);
   }
 
-  // OPEN EDIT VEHICLE MODAL
+  // =========================
+  // EDIT VEHICLE
+  // =========================
   function handleEdit(vehicle) {
     setEditingVehicle(vehicle);
     setIsModalOpen(true);
   }
 
+  // =========================
   // DELETE VEHICLE
+  // =========================
   async function handleDelete(id) {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this vehicle?"
@@ -149,22 +154,24 @@ function Fleet() {
     try {
       await deleteVehicle(id);
 
-      // Fetch fresh data from database
+      // Get fresh data from MongoDB
       await fetchVehicles();
     } catch (error) {
       console.error(
-        "Delete error:",
+        "Delete vehicle error:",
         error.response?.data || error.message
       );
 
       alert(
         error.response?.data?.message ||
-        "Failed to delete vehicle"
+          "Failed to delete vehicle"
       );
     }
   }
 
+  // =========================
   // CREATE / UPDATE VEHICLE
+  // =========================
   async function handleSave(vehicleData) {
     try {
       if (editingVehicle) {
@@ -190,7 +197,7 @@ function Fleet() {
 
       alert(
         error.response?.data?.message ||
-        "Failed to save vehicle"
+          "Failed to save vehicle"
       );
     }
   }
@@ -249,7 +256,6 @@ function Fleet() {
             }}
           />
         )}
-
       </div>
     </div>
   );
