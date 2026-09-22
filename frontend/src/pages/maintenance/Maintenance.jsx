@@ -56,10 +56,10 @@ function normalizeMaintenance(record) {
     ),
 
     // Backend: InShop / Closed
-    // UI: In Shop / Completed
+    // UI: InShop / Completed
     status:
       record.status === "InShop"
-        ? "In Shop"
+        ? "InShop"
         : record.status === "Closed"
         ? "Completed"
         : record.status || "",
@@ -338,8 +338,8 @@ function Maintenance() {
               All Status
             </option>
 
-            <option value="In Shop">
-              In Shop
+            <option value="InShop">
+              InShop
             </option>
 
             <option value="Completed">

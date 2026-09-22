@@ -37,7 +37,7 @@ function SearchBar({
         <option value="All">All Status</option>
         <option value="Available">Available</option>
         <option value="On Trip">On Trip</option>
-        <option value="In Shop">In Shop</option>
+        <option value="InShop">In Shop</option>
         <option value="Retired">Retired</option>
       </select>
     </div>

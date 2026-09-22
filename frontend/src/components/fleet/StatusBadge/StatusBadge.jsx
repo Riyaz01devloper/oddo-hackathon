@@ -4,7 +4,7 @@ function StatusBadge({ status }) {
   const badgeClass = {
     Available: styles.green,
     "On Trip": styles.blue,
-    "In Shop": styles.orange,
+    "InShop": styles.orange,
     Retired: styles.gray,
   };
 

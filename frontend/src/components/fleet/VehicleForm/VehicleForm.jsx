@@ -131,7 +131,7 @@ function VehicleForm({ vehicle, onSave, onCancel }) {
             >
               <option value="Available">Available</option>
               <option value="OnTrip">On Trip</option>
-              <option value="InShop">In Shop</option>
+              <option value="InShop">InShop</option>
               <option value="Retired">Retired</option>
             </select>
           </div>
