@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "./DriverForm.module.css";
 
 const initialForm = {
@@ -6,21 +6,39 @@ const initialForm = {
   licenseNumber: "",
   licenseCategory: "LMV",
   licenseExpiry: "",
-  contactNumber: "",
-  safetyScore: "",
+  phone: "",
+  safetyScore: 100,
   status: "Available",
 };
 
-function DriverForm({ driver, onSave, onCancel }) {
-  const [formData, setFormData] = useState(initialForm);
+function formatDateForInput(date) {
+  if (!date) return "";
 
-  useEffect(() => {
-    if (driver) {
-      setFormData(driver);
-    } else {
-      setFormData(initialForm);
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "";
+  }
+
+  return parsedDate.toISOString().split("T")[0];
+}
+
+function DriverForm({ driver, onSave, onCancel }) {
+  const [formData, setFormData] = useState(() => {
+    if (!driver) {
+      return initialForm;
     }
-  }, [driver]);
+
+    return {
+      name: driver.name || "",
+      licenseNumber: driver.licenseNumber || "",
+      licenseCategory: driver.licenseCategory || "LMV",
+      licenseExpiry: formatDateForInput(driver.licenseExpiry),
+      phone: driver.phone || "",
+      safetyScore: driver.safetyScore ?? 100,
+      status: driver.status || "Available",
+    };
+  });
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -46,8 +64,10 @@ function DriverForm({ driver, onSave, onCancel }) {
         <h2>{driver ? "Edit Driver" : "Add Driver"}</h2>
 
         <form onSubmit={handleSubmit}>
+          {/* NAME */}
           <div className={styles.group}>
             <label>Name</label>
+
             <input
               type="text"
               name="name"
@@ -57,8 +77,10 @@ function DriverForm({ driver, onSave, onCancel }) {
             />
           </div>
 
+          {/* LICENSE NUMBER */}
           <div className={styles.group}>
             <label>License Number</label>
+
             <input
               type="text"
               name="licenseNumber"
@@ -68,6 +90,7 @@ function DriverForm({ driver, onSave, onCancel }) {
             />
           </div>
 
+          {/* LICENSE CATEGORY */}
           <div className={styles.group}>
             <label>License Category</label>
 
@@ -76,12 +99,13 @@ function DriverForm({ driver, onSave, onCancel }) {
               value={formData.licenseCategory}
               onChange={handleChange}
             >
-              <option>LMV</option>
-              <option>HMV</option>
-              <option>Transport</option>
+              <option value="LMV">LMV</option>
+              <option value="HMV">HMV</option>
+              <option value="Transport">Transport</option>
             </select>
           </div>
 
+          {/* LICENSE EXPIRY */}
           <div className={styles.group}>
             <label>License Expiry</label>
 
@@ -94,18 +118,20 @@ function DriverForm({ driver, onSave, onCancel }) {
             />
           </div>
 
+          {/* PHONE */}
           <div className={styles.group}>
             <label>Contact Number</label>
 
             <input
               type="tel"
-              name="contactNumber"
-              value={formData.contactNumber}
+              name="phone"
+              value={formData.phone}
               onChange={handleChange}
               required
             />
           </div>
 
+          {/* SAFETY SCORE */}
           <div className={styles.group}>
             <label>Safety Score</label>
 
@@ -120,6 +146,7 @@ function DriverForm({ driver, onSave, onCancel }) {
             />
           </div>
 
+          {/* STATUS */}
           <div className={styles.group}>
             <label>Status</label>
 
@@ -128,13 +155,14 @@ function DriverForm({ driver, onSave, onCancel }) {
               value={formData.status}
               onChange={handleChange}
             >
-              <option>Available</option>
-              <option>On Trip</option>
-              <option>Off Duty</option>
-              <option>Suspended</option>
+              <option value="Available">Available</option>
+              <option value="OnTrip">On Trip</option>
+              <option value="OffDuty">Off Duty</option>
+              <option value="Suspended">Suspended</option>
             </select>
           </div>
 
+          {/* BUTTONS */}
           <div className={styles.buttons}>
             <button
               type="button"
