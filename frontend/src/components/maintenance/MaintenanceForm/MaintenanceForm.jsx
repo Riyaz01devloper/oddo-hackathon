@@ -1,13 +1,24 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "./MaintenanceForm.module.css";
 
 const initialForm = {
   vehicleId: "",
-  vehicleName: "",
   serviceType: "",
   cost: "",
   date: "",
 };
+
+function formatDateForInput(date) {
+  if (!date) return "";
+
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "";
+  }
+
+  return parsedDate.toISOString().split("T")[0];
+}
 
 function MaintenanceForm({
   record,
@@ -15,64 +26,33 @@ function MaintenanceForm({
   onSave,
   onCancel,
 }) {
-  const [formData, setFormData] =
-    useState(initialForm);
-
-  useEffect(() => {
+  const [formData, setFormData] = useState(() => {
     if (!record) {
-      setFormData(initialForm);
-      return;
+      return initialForm;
     }
 
-    setFormData({
+    return {
       vehicleId:
-        record?.vehicle?._id ||
-        record?.vehicleId ||
-        "",
-
-      vehicleName:
-        record?.vehicle?.vehicleName ||
-        record?.vehicle?.name ||
-        record?.vehicleName ||
+        record.vehicle?._id ||
+        record.vehicle ||
+        record.vehicleId ||
         "",
 
       serviceType:
-        record?.issue ||
-        record?.serviceType ||
+        record.issue ||
+        record.serviceType ||
         "",
 
-      cost:
-        record?.cost ?? "",
+      cost: record.cost ?? "",
 
-      date: record?.openedAt
-        ? new Date(record.openedAt)
-            .toISOString()
-            .split("T")[0]
-        : record?.date || "",
-    });
-  }, [record]);
+      date: formatDateForInput(
+        record.openedAt || record.date
+      ),
+    };
+  });
 
   function handleChange(e) {
     const { name, value } = e.target;
-
-    if (name === "vehicleId") {
-      const vehicle = vehicles.find(
-        (item) =>
-          String(item?._id) ===
-          String(value)
-      );
-
-      setFormData((prev) => ({
-        ...prev,
-        vehicleId: value,
-        vehicleName:
-          vehicle?.vehicleName ||
-          vehicle?.name ||
-          "",
-      }));
-
-      return;
-    }
 
     setFormData((prev) => ({
       ...prev,
@@ -83,11 +63,13 @@ function MaintenanceForm({
   function handleSubmit(e) {
     e.preventDefault();
 
-    const vehicle =
-      String(formData.vehicleId || "").trim();
+    const vehicle = String(
+      formData.vehicleId || ""
+    ).trim();
 
-    const issue =
-      String(formData.serviceType || "").trim();
+    const issue = String(
+      formData.serviceType || ""
+    ).trim();
 
     const cost = Number(formData.cost);
 
@@ -134,6 +116,7 @@ function MaintenanceForm({
         </p>
       </div>
 
+      {/* VEHICLE */}
       <div className={styles.fieldGroup}>
         <label htmlFor="vehicleId">
           Vehicle
@@ -152,17 +135,19 @@ function MaintenanceForm({
 
           {vehicles.map((vehicle) => (
             <option
-              key={vehicle?._id}
-              value={vehicle?._id}
+              key={vehicle._id}
+              value={vehicle._id}
             >
-              {vehicle?.vehicleName ||
-                vehicle?.name ||
+              {vehicle.name ||
+                vehicle.vehicleName ||
+                vehicle.registrationNumber ||
                 "Unnamed Vehicle"}
             </option>
           ))}
         </select>
       </div>
 
+      {/* MAINTENANCE ISSUE */}
       <div className={styles.fieldGroup}>
         <label htmlFor="serviceType">
           Maintenance Issue
@@ -180,6 +165,7 @@ function MaintenanceForm({
       </div>
 
       <div className={styles.row}>
+        {/* COST */}
         <div className={styles.fieldGroup}>
           <label htmlFor="cost">
             Cost
@@ -198,6 +184,7 @@ function MaintenanceForm({
           />
         </div>
 
+        {/* DATE */}
         <div className={styles.fieldGroup}>
           <label htmlFor="date">
             Date
@@ -213,6 +200,7 @@ function MaintenanceForm({
         </div>
       </div>
 
+      {/* ACTIONS */}
       <div className={styles.actions}>
         {onCancel && (
           <button
