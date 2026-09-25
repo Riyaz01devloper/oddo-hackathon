@@ -10,8 +10,7 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import Fleet from "./pages/fleet/Fleet";
 import Drivers from "./pages/drivers/Drivers";
 import Trips from "./pages/trips/Trips";
-import Expenses from "./pages/expenses/Expenses";
-import Maintenance from "./pages/maintenance/Maintenance";
+import FuelExpenses from "./pages/expenses/FuelExpenses";import Maintenance from "./pages/maintenance/Maintenance";
 import Reports from "./pages/reports/Reports";
 import Settings from "./pages/settings/Settings";
 
@@ -59,7 +58,7 @@ const router = createBrowserRouter([
       },
       {
         path: "expenses",
-        element: <Expenses />,
+        element: <FuelExpenses />,
       },
       {
         path: "maintenance",

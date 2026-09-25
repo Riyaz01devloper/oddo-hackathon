@@ -14,6 +14,7 @@ import {
   getMaintenance,
   createMaintenance,
   updateMaintenance,
+  deleteMaintenance,
 } from "../../services/maintenanceService";
 
 import { getVehicles } from "../../services/vehicleService";
@@ -292,6 +293,42 @@ function Maintenance() {
       );
     }
   }
+  // handle delete 
+  async function handleDelete(id) {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this maintenance record?"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await deleteMaintenance(id);
+
+    const response = await getMaintenance();
+
+    const latestData =
+      response.data?.data ||
+      response.data?.maintenance ||
+      response.data ||
+      [];
+
+    const normalized = Array.isArray(latestData)
+      ? latestData.map(normalizeMaintenance)
+      : [];
+
+    setRecords(normalized);
+  } catch (error) {
+    console.error(
+      "Delete maintenance error:",
+      error.response?.data || error.message
+    );
+
+    alert(
+      error.response?.data?.message ||
+        "Failed to delete maintenance record"
+    );
+  }
+}
 
   return (
     <div className={styles.page}>
@@ -352,11 +389,11 @@ function Maintenance() {
         {loading ? (
           <p>Loading maintenance records...</p>
         ) : (
-          <MaintenanceTable
-            records={filteredRecords}
-            onEdit={handleEdit}
-            onDelete={() => {}}
-          />
+         <MaintenanceTable
+  records={filteredRecords}
+  onEdit={handleEdit}
+  onDelete={handleDelete}
+/>
         )}
 
         {/* FORM */}

@@ -1,7 +1,11 @@
 import styles from "./MaintenanceTable.module.css";
 import StatusBadge from "../../fleet/StatusBadge/StatusBadge";
 
-function MaintenanceTable({ records = [], onEdit, onDelete }) {
+function MaintenanceTable({
+  records = [],
+  onEdit,
+  onDelete,
+}) {
   return (
     <div className={styles.wrapper}>
       <table className={styles.table}>
@@ -20,27 +24,31 @@ function MaintenanceTable({ records = [], onEdit, onDelete }) {
           {records.length > 0 ? (
             records.map((record) => {
               const vehicleName =
-                record?.vehicle?.vehicleName ||
-                record?.vehicle?.name ||
-                record?.vehicleName ||
+                record.vehicleName ||
+                record.vehicle?.name ||
+                record.vehicle?.registrationNumber ||
                 "Unknown Vehicle";
 
               const serviceType =
-                record?.issue ||
-                record?.serviceType ||
+                record.serviceType ||
+                record.issue ||
                 "No issue specified";
 
-              const cost = Number(record?.cost || 0);
+              const cost = Number(
+                record.cost || 0
+              );
 
-              const date = record?.openedAt
-                ? new Date(record.openedAt).toLocaleDateString()
-                : record?.date || "-";
+              const date = record.date
+                ? new Date(
+                    record.date
+                  ).toLocaleDateString("en-IN")
+                : "-";
 
               const status =
-                record?.status || "InShop";
+                record.status || "InShop";
 
               const recordId =
-                record?._id || record?.id;
+                record._id || record.id;
 
               return (
                 <tr key={recordId}>
@@ -49,19 +57,30 @@ function MaintenanceTable({ records = [], onEdit, onDelete }) {
                   <td>{serviceType}</td>
 
                   <td>
-                    ₹{cost.toLocaleString("en-IN")}
+                    ₹
+                    {cost.toLocaleString(
+                      "en-IN"
+                    )}
                   </td>
 
                   <td>{date}</td>
 
                   <td>
-                    <StatusBadge status={status} />
+                    <StatusBadge
+                      status={status}
+                    />
                   </td>
 
                   <td>
-                    <div className={styles.actions}>
+                    <div
+                      className={
+                        styles.actions
+                      }
+                    >
                       <button
-                        className={styles.edit}
+                        className={
+                          styles.edit
+                        }
                         onClick={() =>
                           onEdit?.(record)
                         }
@@ -70,9 +89,13 @@ function MaintenanceTable({ records = [], onEdit, onDelete }) {
                       </button>
 
                       <button
-                        className={styles.delete}
+                        className={
+                          styles.delete
+                        }
                         onClick={() =>
-                          onDelete?.(recordId)
+                          onDelete?.(
+                            recordId
+                          )
                         }
                       >
                         Delete
