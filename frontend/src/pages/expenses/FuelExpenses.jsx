@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./FuelExpenses.module.css";
 
 import FuelTable from "../../components/expenses/FuelTable/FuelTable";
@@ -6,160 +6,246 @@ import ExpenseTable from "../../components/expenses/ExpenseTable/ExpenseTable";
 import FuelForm from "../../components/expenses/FuelForm/FuelForm";
 import ExpenseForm from "../../components/expenses/ExpenseForm/ExpenseForm";
 
-const vehicles = [
-  { id: 1, vehicleName: "Tata Ace" },
-  { id: 2, vehicleName: "Ashok Leyland" },
-  { id: 3, vehicleName: "Mahindra Pickup" },
-];
+import { getVehicles } from "../../services/fleet.service";
+import {
+  getFuelLogs,
+  createFuelLog,
+} from "../../services/fuel.service";
 
-// TODO: GET /api/fuel
-const initialFuelLogs = [
-  {
-    id: 1,
-    vehicleId: 1,
-    vehicleName: "Tata Ace",
-    date: "2026-07-10",
-    liters: 45,
-    cost: 4700,
-  },
-  {
-    id: 2,
-    vehicleId: 2,
-    vehicleName: "Ashok Leyland",
-    date: "2026-07-12",
-    liters: 70,
-    cost: 7700,
-  },
-];
-
-// TODO: GET /api/expenses
-const initialExpenses = [
-  {
-    id: 1,
-    vehicleId: 1,
-    vehicleName: "Tata Ace",
-    expenseType: "Toll",
-    amount: 800,
-    date: "2026-07-11",
-  },
-  {
-    id: 2,
-    vehicleId: 2,
-    vehicleName: "Ashok Leyland",
-    expenseType: "Parking",
-    amount: 300,
-    date: "2026-07-12",
-  },
-];
+import {
+  getExpenses,
+  createExpense,
+  deleteExpense as deleteExpenseApi,
+} from "../../services/expense.service";
 
 function FuelExpenses() {
   const [activeTab, setActiveTab] = useState("fuel");
 
-  const [fuelLogs, setFuelLogs] = useState(initialFuelLogs);
-  const [expenses, setExpenses] = useState(initialExpenses);
+  const [vehicles, setVehicles] = useState([]);
+  const [fuelLogs, setFuelLogs] = useState([]);
+  const [expenses, setExpenses] = useState([]);
 
   const [search, setSearch] = useState("");
 
   const [fuelModal, setFuelModal] = useState(false);
   const [expenseModal, setExpenseModal] = useState(false);
 
-  const [editingFuel, setEditingFuel] = useState(null);
-  const [editingExpense, setEditingExpense] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadData = async () => {
+    try {
+      setError("");
+
+      const [
+        vehiclesResponse,
+        fuelResponse,
+        expenseResponse,
+      ] = await Promise.all([
+        getVehicles(),
+        getFuelLogs(),
+        getExpenses(),
+      ]);
+
+      const vehicleData =
+        vehiclesResponse.data?.data ||
+        vehiclesResponse.data?.vehicles ||
+        [];
+
+      const fuelData =
+        fuelResponse.data?.data || [];
+
+      const expenseData =
+        expenseResponse.data?.data || [];
+
+      setVehicles(
+        Array.isArray(vehicleData) ? vehicleData : []
+      );
+
+      setFuelLogs(
+        Array.isArray(fuelData) ? fuelData : []
+      );
+
+      setExpenses(
+        Array.isArray(expenseData) ? expenseData : []
+      );
+    } catch (err) {
+      console.error("Failed to load fuel and expenses:", err);
+
+      setError(
+        err.response?.data?.message ||
+          "Failed to load fuel and expense data."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+
+    const interval = setInterval(() => {
+      loadData();
+    }, 10000);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, []);
 
   const filteredFuel = useMemo(() => {
-    return fuelLogs.filter((item) =>
-      item.vehicleName.toLowerCase().includes(search.toLowerCase())
-    );
+    const query = search.toLowerCase().trim();
+
+    return fuelLogs.filter((item) => {
+      const vehicleName =
+        item.vehicle?.name ||
+        item.vehicle?.registrationNumber ||
+        "";
+
+      return vehicleName
+        .toLowerCase()
+        .includes(query);
+    });
   }, [fuelLogs, search]);
 
   const filteredExpenses = useMemo(() => {
-    return expenses.filter((item) =>
-      item.vehicleName.toLowerCase().includes(search.toLowerCase())
-    );
+    const query = search.toLowerCase().trim();
+
+    return expenses.filter((item) => {
+      const vehicleName =
+        item.vehicle?.name ||
+        item.vehicle?.registrationNumber ||
+        "";
+
+      return vehicleName
+        .toLowerCase()
+        .includes(query);
+    });
   }, [expenses, search]);
 
-  function saveFuel(data) {
-    if (editingFuel) {
-      // TODO: PUT /api/fuel/:id
+  const saveFuel = async (data) => {
+    try {
+      setSaving(true);
+      setError("");
 
-      setFuelLogs((prev) =>
-        prev.map((item) =>
-          item.id === editingFuel.id
-            ? { ...data, id: editingFuel.id }
-            : item
-        )
+      const payload = {
+        vehicle: data.vehicle || data.vehicleId,
+        liters: Number(data.liters),
+        cost: Number(data.cost),
+        date: data.date || undefined,
+      };
+
+      await createFuelLog(payload);
+
+      setFuelModal(false);
+
+      await loadData();
+    } catch (err) {
+      console.error("Failed to add fuel log:", err);
+
+      setError(
+        err.response?.data?.message ||
+          "Failed to add fuel log."
       );
-    } else {
-      // TODO: POST /api/fuel
-
-      setFuelLogs((prev) => [
-        ...prev,
-        {
-          ...data,
-          id: Date.now(),
-        },
-      ]);
+    } finally {
+      setSaving(false);
     }
+  };
 
-    setEditingFuel(null);
-    setFuelModal(false);
-  }
+  const saveExpense = async (data) => {
+    try {
+      setSaving(true);
+      setError("");
 
-  function deleteFuel(id) {
-    if (!window.confirm("Delete fuel log?")) return;
+      const payload = {
+        vehicle: data.vehicle || data.vehicleId,
+        type: data.type || data.expenseType,
+        amount: Number(data.amount),
+        description: data.description || "",
+      };
 
-    // TODO: DELETE /api/fuel/:id
+      await createExpense(payload);
 
-    setFuelLogs((prev) => prev.filter((item) => item.id !== id));
-  }
+      setExpenseModal(false);
 
-  function saveExpense(data) {
-    if (editingExpense) {
-      // TODO: PUT /api/expenses/:id
+      await loadData();
+    } catch (err) {
+      console.error("Failed to add expense:", err);
 
-      setExpenses((prev) =>
-        prev.map((item) =>
-          item.id === editingExpense.id
-            ? { ...data, id: editingExpense.id }
-            : item
-        )
+      setError(
+        err.response?.data?.message ||
+          "Failed to add expense."
       );
-    } else {
-      // TODO: POST /api/expenses
-
-      setExpenses((prev) => [
-        ...prev,
-        {
-          ...data,
-          id: Date.now(),
-        },
-      ]);
+    } finally {
+      setSaving(false);
     }
+  };
 
-    setEditingExpense(null);
-    setExpenseModal(false);
-  }
+  const handleDeleteExpense = async (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this expense?"
+    );
 
-  function deleteExpense(id) {
-    if (!window.confirm("Delete expense?")) return;
+    if (!confirmed) return;
 
-    // TODO: DELETE /api/expenses/:id
+    try {
+      setError("");
 
-    setExpenses((prev) => prev.filter((item) => item.id !== id));
-  }
+      await deleteExpenseApi(id);
+
+      await loadData();
+    } catch (err) {
+      console.error("Failed to delete expense:", err);
+
+      setError(
+        err.response?.data?.message ||
+          "Failed to delete expense."
+      );
+    }
+  };
+
+  const openAddModal = () => {
+    if (activeTab === "fuel") {
+      setFuelModal(true);
+    } else {
+      setExpenseModal(true);
+    }
+  };
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
         <h1>Fuel & Expenses</h1>
 
-        <p>Track fuel logs and operational expenses.</p>
+        <p>
+          Track fuel logs and operational expenses.
+        </p>
+
+        {error && (
+          <div
+            style={{
+              marginTop: "15px",
+              padding: "12px",
+              borderRadius: "8px",
+              background: "#fee2e2",
+              color: "#991b1b",
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         <div className={styles.topBar}>
           <div className={styles.tabs}>
             <button
               className={
-                activeTab === "fuel" ? styles.activeTab : ""
+                activeTab === "fuel"
+                  ? styles.activeTab
+                  : ""
               }
               onClick={() => setActiveTab("fuel")}
             >
@@ -168,7 +254,9 @@ function FuelExpenses() {
 
             <button
               className={
-                activeTab === "expense" ? styles.activeTab : ""
+                activeTab === "expense"
+                  ? styles.activeTab
+                  : ""
               }
               onClick={() => setActiveTab("expense")}
             >
@@ -178,15 +266,8 @@ function FuelExpenses() {
 
           <button
             className={styles.addButton}
-            onClick={() => {
-              if (activeTab === "fuel") {
-                setEditingFuel(null);
-                setFuelModal(true);
-              } else {
-                setEditingExpense(null);
-                setExpenseModal(true);
-              }
-            }}
+            onClick={openAddModal}
+            disabled={saving}
           >
             Add
           </button>
@@ -196,50 +277,43 @@ function FuelExpenses() {
           className={styles.search}
           placeholder="Search by vehicle..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) =>
+            setSearch(e.target.value)
+          }
         />
 
-        {activeTab === "fuel" ? (
+        {loading ? (
+          <div style={{ padding: "30px 0" }}>
+            Loading...
+          </div>
+        ) : activeTab === "fuel" ? (
           <FuelTable
             logs={filteredFuel}
-            onEdit={(item) => {
-              setEditingFuel(item);
-              setFuelModal(true);
-            }}
-            onDelete={deleteFuel}
           />
         ) : (
           <ExpenseTable
             expenses={filteredExpenses}
-            onEdit={(item) => {
-              setEditingExpense(item);
-              setExpenseModal(true);
-            }}
-            onDelete={deleteExpense}
+            onDelete={handleDeleteExpense}
           />
         )}
 
         {fuelModal && (
           <FuelForm
-            record={editingFuel}
+            record={null}
             vehicles={vehicles}
             onSave={saveFuel}
-            onCancel={() => {
-              setEditingFuel(null);
-              setFuelModal(false);
-            }}
+            onCancel={() => setFuelModal(false)}
           />
         )}
 
         {expenseModal && (
           <ExpenseForm
-            record={editingExpense}
+            record={null}
             vehicles={vehicles}
             onSave={saveExpense}
-            onCancel={() => {
-              setEditingExpense(null);
-              setExpenseModal(false);
-            }}
+            onCancel={() =>
+              setExpenseModal(false)
+            }
           />
         )}
       </div>
