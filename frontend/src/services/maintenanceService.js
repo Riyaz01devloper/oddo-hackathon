@@ -1,12 +1,25 @@
 import api from "./api";
 
-export const getMaintenance = () => api.get("/maintenance");
+export const getMaintenance = () => {
+  return api.get("/maintenance");
+};
 
-export const createMaintenance = (data) =>
-  api.post("/maintenance", data);
+export const getMaintenanceById = (id) => {
+  return api.get(`/maintenance/${id}`);
+};
 
-export const updateMaintenance = (id, data) =>
-  api.put(`/maintenance/${id}`, data);
+export const createMaintenance = (data) => {
+  return api.post("/maintenance", data);
+};
 
-export const deleteMaintenance = (id) =>
-  api.delete(`/maintenance/${id}`);
+export const updateMaintenance = (id, data) => {
+  return api.put(`/maintenance/${id}`, data);
+};
+
+export const closeMaintenance = (id) => {
+  return api.patch(`/maintenance/${id}/close`);
+};
+
+export const deleteMaintenance = (id) => {
+  return api.delete(`/maintenance/${id}`);
+};

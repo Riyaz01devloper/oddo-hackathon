@@ -6,17 +6,18 @@ import ExpenseTable from "../../components/expenses/ExpenseTable/ExpenseTable";
 import FuelForm from "../../components/expenses/FuelForm/FuelForm";
 import ExpenseForm from "../../components/expenses/ExpenseForm/ExpenseForm";
 
-import { getVehicles } from "../../services/fleet.service";
+import { getVehicles } from "../../services/fleetService";
+
 import {
   getFuelLogs,
   createFuelLog,
-} from "../../services/fuel.service";
+} from "../../services/fuelService"
 
 import {
   getExpenses,
   createExpense,
-  deleteExpense as deleteExpenseApi,
-} from "../../services/expense.service";
+  deleteExpense,
+} from "../../services/expenseService"
 
 function FuelExpenses() {
   const [activeTab, setActiveTab] = useState("fuel");
