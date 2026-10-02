@@ -12,6 +12,7 @@ const {
   fleetUtilization,
   operationalCost,
   vehicleROI,
+  vehicleCosts,
 } = require("../controllers/analytics.controller.js");
 
 const verifyJWT = require("../middlewares/auth.middleware.js");
@@ -22,25 +23,24 @@ const {
 
 // ANALYTICS
 
+const analyticsRoles = [
+  "Fleet Manager",
+  "Safety Officer",
+  "Financial Analyst",
+  "Driver",
+];
+
 router.get(
   "/analytics/fuel-efficiency",
   verifyJWT,
-  authorizeRoles(
-    "Fleet Manager",
-    "Safety Officer",
-    "Financial Analyst"
-  ),
+  authorizeRoles(...analyticsRoles),
   fuelEfficiency
 );
 
 router.get(
   "/analytics/fuel-efficiency/:vehicleId",
   verifyJWT,
-  authorizeRoles(
-    "Fleet Manager",
-    "Safety Officer",
-    "Financial Analyst"
-  ),
+  authorizeRoles(...analyticsRoles),
   validateObjectId("vehicleId"),
   fuelEfficiency
 );
@@ -48,46 +48,37 @@ router.get(
 router.get(
   "/analytics/fleet-utilization",
   verifyJWT,
-  authorizeRoles(
-    "Fleet Manager",
-    "Safety Officer",
-    "Financial Analyst"
-  ),
+  authorizeRoles(...analyticsRoles),
   fleetUtilization
 );
 
 router.get(
   "/analytics/operational-cost",
   verifyJWT,
-  authorizeRoles(
-    "Fleet Manager",
-    "Safety Officer",
-    "Financial Analyst"
-  ),
+  authorizeRoles(...analyticsRoles),
   operationalCost
 );
 
 router.get(
   "/analytics/vehicle-roi",
   verifyJWT,
-  authorizeRoles(
-    "Fleet Manager",
-    "Safety Officer",
-    "Financial Analyst"
-  ),
+  authorizeRoles(...analyticsRoles),
   vehicleROI
 );
 
 router.get(
   "/analytics/vehicle-roi/:vehicleId",
   verifyJWT,
-  authorizeRoles(
-    "Fleet Manager",
-    "Safety Officer",
-    "Financial Analyst"
-  ),
+  authorizeRoles(...analyticsRoles),
   validateObjectId("vehicleId"),
   vehicleROI
+);
+
+router.get(
+  "/analytics/vehicle-costs",
+  verifyJWT,
+  authorizeRoles(...analyticsRoles),
+  vehicleCosts
 );
 
 // DASHBOARD

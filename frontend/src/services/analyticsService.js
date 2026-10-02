@@ -11,3 +11,6 @@ export const getOperationalCost = () =>
 
 export const getVehicleROI = () =>
   api.get("/reports/analytics/vehicle-roi");
+
+export const getVehicleCosts = () =>
+  api.get("/reports/analytics/vehicle-costs");

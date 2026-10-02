@@ -45,7 +45,7 @@ const menuItems = [
   },
   {
     name: "Analytics",
-    path: "/reports",
+    path: "/analytics",
     icon: <BarChart3 size={20} />,
   },
 ];

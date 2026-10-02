@@ -1,6 +1,10 @@
 import styles from "./VehicleCostTable.module.css";
 
-function VehicleCostTable({ vehicleCosts }) {
+function formatCurrency(value) {
+  return `₹${Number(value || 0).toLocaleString("en-IN")}`;
+}
+
+function VehicleCostTable({ vehicleCosts = [] }) {
   return (
     <div className={styles.wrapper}>
       <table className={styles.table}>
@@ -14,17 +18,22 @@ function VehicleCostTable({ vehicleCosts }) {
         </thead>
 
         <tbody>
-          {vehicleCosts.map((vehicle) => (
-            <tr key={vehicle.id}>
-              <td>{vehicle.vehicle}</td>
-
-              <td>₹{vehicle.fuelCost.toLocaleString()}</td>
-
-              <td>₹{vehicle.maintenanceCost.toLocaleString()}</td>
-
-              <td>₹{vehicle.totalCost.toLocaleString()}</td>
+          {vehicleCosts.length > 0 ? (
+            vehicleCosts.map((vehicle) => (
+              <tr key={vehicle.id || vehicle._id}>
+                <td>{vehicle.vehicle}</td>
+                <td>{formatCurrency(vehicle.fuelCost)}</td>
+                <td>{formatCurrency(vehicle.maintenanceCost)}</td>
+                <td>{formatCurrency(vehicle.totalCost)}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="4" className={styles.empty}>
+                No vehicle cost data yet.
+              </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

@@ -11,7 +11,7 @@ import Fleet from "./pages/fleet/Fleet";
 import Drivers from "./pages/drivers/Drivers";
 import Trips from "./pages/trips/Trips";
 import FuelExpenses from "./pages/expenses/FuelExpenses";import Maintenance from "./pages/maintenance/Maintenance";
-import Reports from "./pages/reports/Reports";
+import Analytics from "./pages/analytics/Analytics";
 import Settings from "./pages/settings/Settings";
 
 // Auth Pages
@@ -66,7 +66,11 @@ const router = createBrowserRouter([
       },
       {
         path: "reports",
-        element: <Reports />,
+        element: <Analytics />,
+      },
+      {
+        path: "analytics",
+        element: <Analytics />,
       },
       {
         path: "settings",

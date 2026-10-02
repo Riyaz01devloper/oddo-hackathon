@@ -10,7 +10,12 @@ import {
   getFleetUtilization,
   getOperationalCost,
   getVehicleROI,
+  getVehicleCosts,
 } from "../../services/analyticsService";
+
+function unwrap(response) {
+  return response?.data?.data ?? response?.data ?? {};
+}
 
 function Analytics() {
   const [analytics, setAnalytics] = useState({
@@ -20,10 +25,9 @@ function Analytics() {
     vehicleROI: 0,
   });
 
+  const [vehicleCosts, setVehicleCosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const vehicleCosts = [];
 
   useEffect(() => {
     let cancelled = false;
@@ -37,28 +41,31 @@ function Analytics() {
           fleetUtilizationResponse,
           operationalCostResponse,
           vehicleROIResponse,
+          vehicleCostsResponse,
         ] = await Promise.all([
           getFuelEfficiency(),
           getFleetUtilization(),
           getOperationalCost(),
           getVehicleROI(),
+          getVehicleCosts(),
         ]);
 
         if (cancelled) return;
 
+        const fuelData = unwrap(fuelEfficiencyResponse);
+        const utilizationData = unwrap(fleetUtilizationResponse);
+        const costData = unwrap(operationalCostResponse);
+        const roiData = unwrap(vehicleROIResponse);
+        const costsData = unwrap(vehicleCostsResponse);
+
         setAnalytics({
-          fuelEfficiency:
-            fuelEfficiencyResponse.data?.data?.fuelEfficiency ?? 0,
-
-          fleetUtilization:
-            fleetUtilizationResponse.data?.data?.fleetUtilization ?? 0,
-
-          operationalCost:
-            operationalCostResponse.data?.data?.totalCost ?? 0,
-
-          vehicleROI:
-            vehicleROIResponse.data?.data?.vehicleROI ?? 0,
+          fuelEfficiency: fuelData.fuelEfficiency ?? 0,
+          fleetUtilization: utilizationData.fleetUtilization ?? 0,
+          operationalCost: costData.totalCost ?? 0,
+          vehicleROI: roiData.vehicleROI ?? 0,
         });
+
+        setVehicleCosts(Array.isArray(costsData) ? costsData : []);
       } catch (err) {
         if (!cancelled) {
           console.error("Analytics loading error:", err);
@@ -75,13 +82,12 @@ function Analytics() {
       }
     };
 
-    const timer = setTimeout(loadAnalytics, 0);
+    loadAnalytics();
 
     const interval = setInterval(loadAnalytics, 10000);
 
     return () => {
       cancelled = true;
-      clearTimeout(timer);
       clearInterval(interval);
     };
   }, []);
@@ -103,9 +109,7 @@ function Analytics() {
       title: "Operational Cost",
       value: loading
         ? "..."
-        : `₹${Number(
-            analytics.operationalCost
-          ).toLocaleString("en-IN")}`,
+        : `₹${Number(analytics.operationalCost).toLocaleString("en-IN")}`,
     },
     {
       title: "Vehicle ROI",
@@ -115,6 +119,27 @@ function Analytics() {
     },
   ];
 
+  function handleExport() {
+    const rows = [
+      ["Vehicle", "Fuel Cost", "Maintenance Cost", "Total Cost"],
+      ...vehicleCosts.map((item) => [
+        item.vehicle,
+        item.fuelCost,
+        item.maintenanceCost,
+        item.totalCost,
+      ]),
+    ];
+
+    const csv = rows.map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "analytics-vehicle-costs.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.container}>
@@ -122,26 +147,21 @@ function Analytics() {
           <div>
             <h1>Analytics</h1>
             <p>
-              Monitor fleet performance and operational insights.
+              Live fleet performance based on trips, fuel, maintenance, and expenses.
             </p>
           </div>
 
           <button
             className={styles.exportButton}
             type="button"
-            onClick={() => {
-              alert("CSV export will be added next.");
-            }}
+            onClick={handleExport}
+            disabled={vehicleCosts.length === 0}
           >
             Export CSV
           </button>
         </div>
 
-        {error && (
-          <div className={styles.error}>
-            {error}
-          </div>
-        )}
+        {error && <div className={styles.error}>{error}</div>}
 
         <section className={styles.cardGrid}>
           {cards.map((card) => (
