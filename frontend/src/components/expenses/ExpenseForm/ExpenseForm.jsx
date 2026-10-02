@@ -1,25 +1,52 @@
 import { useEffect, useState } from "react";
 import styles from "./ExpenseForm.module.css";
 
+const EXPENSE_TYPES = [
+  "Toll",
+  "Parking",
+  "Repair",
+  "Maintenance",
+  "Insurance",
+  "Other",
+];
+
 const initialForm = {
   vehicleId: "",
-  vehicleName: "",
-  expenseType: "",
+  type: "",
   amount: "",
   date: "",
+  description: "",
 };
 
-function ExpenseForm({
-  record,
-  vehicles,
-  onSave,
-  onCancel,
-}) {
+function getVehicleId(vehicle) {
+  return vehicle?._id || vehicle?.id || "";
+}
+
+function getVehicleLabel(vehicle) {
+  return (
+    vehicle?.name ||
+    vehicle?.vehicleName ||
+    vehicle?.registrationNumber ||
+    "Unnamed Vehicle"
+  );
+}
+
+function ExpenseForm({ record, vehicles = [], onSave, onCancel }) {
   const [formData, setFormData] = useState(initialForm);
 
   useEffect(() => {
     if (record) {
-      setFormData(record);
+      setFormData({
+        vehicleId: getVehicleId(record.vehicle) || record.vehicleId || "",
+        type: record.type || record.expenseType || "",
+        amount: record.amount ?? "",
+        date: record.date || record.createdAt
+          ? new Date(record.date || record.createdAt)
+              .toISOString()
+              .split("T")[0]
+          : "",
+        description: record.description || "",
+      });
     } else {
       setFormData(initialForm);
     }
@@ -27,20 +54,6 @@ function ExpenseForm({
 
   function handleChange(e) {
     const { name, value } = e.target;
-
-    if (name === "vehicleId") {
-      const vehicle = vehicles.find(
-        (item) => item.id === Number(value)
-      );
-
-      setFormData((prev) => ({
-        ...prev,
-        vehicleId: Number(value),
-        vehicleName: vehicle ? vehicle.vehicleName : "",
-      }));
-
-      return;
-    }
 
     setFormData((prev) => ({
       ...prev,
@@ -51,18 +64,31 @@ function ExpenseForm({
   function handleSubmit(e) {
     e.preventDefault();
 
+    if (!formData.vehicleId) {
+      alert("Please select a vehicle");
+      return;
+    }
+
+    if (!formData.type) {
+      alert("Please select an expense type");
+      return;
+    }
+
     onSave({
-      ...formData,
+      vehicle: formData.vehicleId,
+      vehicleId: formData.vehicleId,
+      type: formData.type,
+      expenseType: formData.type,
       amount: Number(formData.amount),
+      date: formData.date,
+      description: formData.description,
     });
   }
 
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        <h2>
-          {record ? "Edit Expense" : "Add Expense"}
-        </h2>
+        <h2>{record ? "Edit Expense" : "Add Expense"}</h2>
 
         <form onSubmit={handleSubmit}>
           <div className={styles.group}>
@@ -74,31 +100,37 @@ function ExpenseForm({
               onChange={handleChange}
               required
             >
-              <option value="">
-                Select Vehicle
-              </option>
+              <option value="">Select Vehicle</option>
 
-              {vehicles.map((vehicle) => (
-                <option
-                  key={vehicle.id}
-                  value={vehicle.id}
-                >
-                  {vehicle.vehicleName}
-                </option>
-              ))}
+              {vehicles.map((vehicle) => {
+                const id = String(getVehicleId(vehicle));
+
+                return (
+                  <option key={id} value={id}>
+                    {getVehicleLabel(vehicle)}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
           <div className={styles.group}>
             <label>Expense Type</label>
 
-            <input
-              type="text"
-              name="expenseType"
-              value={formData.expenseType}
+            <select
+              name="type"
+              value={formData.type}
               onChange={handleChange}
               required
-            />
+            >
+              <option value="">Select Type</option>
+
+              {EXPENSE_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className={styles.group}>
@@ -109,6 +141,8 @@ function ExpenseForm({
               name="amount"
               value={formData.amount}
               onChange={handleChange}
+              min="0"
+              step="0.01"
               required
             />
           </div>
@@ -121,7 +155,6 @@ function ExpenseForm({
               name="date"
               value={formData.date}
               onChange={handleChange}
-              required
             />
           </div>
 
@@ -134,10 +167,7 @@ function ExpenseForm({
               Cancel
             </button>
 
-            <button
-              type="submit"
-              className={styles.save}
-            >
+            <button type="submit" className={styles.save}>
               Save
             </button>
           </div>

@@ -1,6 +1,6 @@
 import styles from "./ExpenseTable.module.css";
 
-function ExpenseTable({ expenses, onEdit, onDelete }) {
+function ExpenseTable({ expenses = [], onDelete }) {
   return (
     <div className={styles.wrapper}>
       <table className={styles.table}>
@@ -17,27 +17,35 @@ function ExpenseTable({ expenses, onEdit, onDelete }) {
         <tbody>
           {expenses.length > 0 ? (
             expenses.map((expense) => (
-              <tr key={expense.id}>
-                <td>{expense.vehicleName}</td>
+              <tr key={expense._id || expense.id}>
+                <td>
+                  {expense.vehicle?.name ||
+                    expense.vehicleName ||
+                    "Unknown Vehicle"}
+                </td>
 
-                <td>{expense.expenseType}</td>
+                <td>{expense.type || expense.expenseType || "-"}</td>
 
-                <td>₹{expense.amount.toLocaleString()}</td>
+                <td>
+                  ₹
+                  {Number(expense.amount || 0).toLocaleString("en-IN")}
+                </td>
 
-                <td>{expense.date}</td>
+                <td>
+                  {expense.createdAt || expense.date
+                    ? new Date(
+                        expense.createdAt || expense.date
+                      ).toLocaleDateString("en-IN")
+                    : "-"}
+                </td>
 
                 <td>
                   <div className={styles.actions}>
                     <button
-                      className={styles.edit}
-                      onClick={() => onEdit(expense)}
-                    >
-                      Edit
-                    </button>
-
-                    <button
                       className={styles.delete}
-                      onClick={() => onDelete(expense.id)}
+                      onClick={() =>
+                        onDelete(expense._id || expense.id)
+                      }
                     >
                       Delete
                     </button>

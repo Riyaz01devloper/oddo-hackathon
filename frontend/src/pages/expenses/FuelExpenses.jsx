@@ -39,38 +39,44 @@ function FuelExpenses() {
     try {
       setError("");
 
-      const [
-        vehiclesResponse,
-        fuelResponse,
-        expenseResponse,
-      ] = await Promise.all([
-        getVehicles(),
-        getFuelLogs(),
-        getExpenses(),
-      ]);
+      const [vehiclesResult, fuelResult, expenseResult] =
+        await Promise.allSettled([
+          getVehicles(),
+          getFuelLogs(),
+          getExpenses(),
+        ]);
 
-      const vehicleData =
-        vehiclesResponse.data?.data ||
-        vehiclesResponse.data?.vehicles ||
-        [];
+      if (vehiclesResult.status === "fulfilled") {
+        const vehicleData =
+          vehiclesResult.value.data?.vehicles ||
+          vehiclesResult.value.data?.data ||
+          [];
 
-      const fuelData =
-        fuelResponse.data?.data || [];
+        setVehicles(Array.isArray(vehicleData) ? vehicleData : []);
+      } else {
+        setVehicles([]);
+      }
 
-      const expenseData =
-        expenseResponse.data?.data || [];
+      if (fuelResult.status === "fulfilled") {
+        const fuelData = fuelResult.value.data?.data || [];
+        setFuelLogs(Array.isArray(fuelData) ? fuelData : []);
+      }
 
-      setVehicles(
-        Array.isArray(vehicleData) ? vehicleData : []
+      if (expenseResult.status === "fulfilled") {
+        const expenseData = expenseResult.value.data?.data || [];
+        setExpenses(Array.isArray(expenseData) ? expenseData : []);
+      }
+
+      const firstFailure = [vehiclesResult, fuelResult, expenseResult].find(
+        (result) => result.status === "rejected"
       );
 
-      setFuelLogs(
-        Array.isArray(fuelData) ? fuelData : []
-      );
-
-      setExpenses(
-        Array.isArray(expenseData) ? expenseData : []
-      );
+      if (firstFailure) {
+        setError(
+          firstFailure.reason?.response?.data?.message ||
+            "Failed to load fuel and expense data."
+        );
+      }
     } catch (err) {
       console.error("Failed to load fuel and expenses:", err);
 
@@ -196,7 +202,7 @@ function FuelExpenses() {
     try {
       setError("");
 
-      await deleteExpenseApi(id);
+      await deleteExpense(id);
 
       await loadData();
     } catch (err) {

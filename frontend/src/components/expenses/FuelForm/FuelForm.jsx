@@ -3,18 +3,37 @@ import styles from "./FuelForm.module.css";
 
 const initialForm = {
   vehicleId: "",
-  vehicleName: "",
   date: "",
   liters: "",
   cost: "",
 };
 
-function FuelForm({ record, vehicles, onSave, onCancel }) {
+function getVehicleId(vehicle) {
+  return vehicle?._id || vehicle?.id || "";
+}
+
+function getVehicleLabel(vehicle) {
+  return (
+    vehicle?.name ||
+    vehicle?.vehicleName ||
+    vehicle?.registrationNumber ||
+    "Unnamed Vehicle"
+  );
+}
+
+function FuelForm({ record, vehicles = [], onSave, onCancel }) {
   const [formData, setFormData] = useState(initialForm);
 
   useEffect(() => {
     if (record) {
-      setFormData(record);
+      setFormData({
+        vehicleId: getVehicleId(record.vehicle) || record.vehicleId || "",
+        date: record.date
+          ? new Date(record.date).toISOString().split("T")[0]
+          : "",
+        liters: record.liters ?? "",
+        cost: record.cost ?? "",
+      });
     } else {
       setFormData(initialForm);
     }
@@ -22,18 +41,6 @@ function FuelForm({ record, vehicles, onSave, onCancel }) {
 
   function handleChange(e) {
     const { name, value } = e.target;
-
-    if (name === "vehicleId") {
-      const vehicle = vehicles.find((v) => v.id === Number(value));
-
-      setFormData((prev) => ({
-        ...prev,
-        vehicleId: Number(value),
-        vehicleName: vehicle ? vehicle.vehicleName : "",
-      }));
-
-      return;
-    }
 
     setFormData((prev) => ({
       ...prev,
@@ -44,8 +51,15 @@ function FuelForm({ record, vehicles, onSave, onCancel }) {
   function handleSubmit(e) {
     e.preventDefault();
 
+    if (!formData.vehicleId) {
+      alert("Please select a vehicle");
+      return;
+    }
+
     onSave({
-      ...formData,
+      vehicle: formData.vehicleId,
+      vehicleId: formData.vehicleId,
+      date: formData.date,
       liters: Number(formData.liters),
       cost: Number(formData.cost),
     });
@@ -68,11 +82,15 @@ function FuelForm({ record, vehicles, onSave, onCancel }) {
             >
               <option value="">Select Vehicle</option>
 
-              {vehicles.map((vehicle) => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.vehicleName}
-                </option>
-              ))}
+              {vehicles.map((vehicle) => {
+                const id = String(getVehicleId(vehicle));
+
+                return (
+                  <option key={id} value={id}>
+                    {getVehicleLabel(vehicle)}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -96,6 +114,8 @@ function FuelForm({ record, vehicles, onSave, onCancel }) {
               name="liters"
               value={formData.liters}
               onChange={handleChange}
+              min="0"
+              step="0.01"
               required
             />
           </div>
@@ -108,6 +128,8 @@ function FuelForm({ record, vehicles, onSave, onCancel }) {
               name="cost"
               value={formData.cost}
               onChange={handleChange}
+              min="0"
+              step="0.01"
               required
             />
           </div>
@@ -121,10 +143,7 @@ function FuelForm({ record, vehicles, onSave, onCancel }) {
               Cancel
             </button>
 
-            <button
-              type="submit"
-              className={styles.save}
-            >
+            <button type="submit" className={styles.save}>
               Save
             </button>
           </div>
