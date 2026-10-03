@@ -6,7 +6,8 @@ const {
   draftTrip,
   dispatchTrip,
   finishTrip,
-  cancelTrip
+  cancelTrip,updateTrip,
+deleteTrip,
 } = require('../controllers/trip.controller.js');
 const verifyJWT = require('../middlewares/auth.middleware.js');
 const authorizeRoles = require('../middlewares/role.middleware.js');
@@ -16,5 +17,17 @@ router.post('/', verifyJWT, authorizeRoles('Fleet Manager', 'Driver'), draftTrip
 router.patch('/:tripId/dispatch', verifyJWT, authorizeRoles('Fleet Manager', 'Driver'), dispatchTrip);
 router.patch('/:tripId/complete', verifyJWT, authorizeRoles('Fleet Manager', 'Driver'), finishTrip);
 router.patch('/:tripId/cancel', verifyJWT, authorizeRoles('Fleet Manager', 'Driver'), cancelTrip);
+router.put(
+    "/:tripId",
+    verifyJWT,
+    authorizeRoles("Fleet Manager", "Driver"),
+    updateTrip
+);
 
+router.delete(
+    "/:tripId",
+    verifyJWT,
+    authorizeRoles("Fleet Manager", "Driver"),
+    deleteTrip
+);
 module.exports = router;

@@ -1,190 +1,485 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Route,
+  FileText,
+  Send,
+  CheckCircle2,
+  XCircle,
+  Plus,
+} from "lucide-react";
+
 import styles from "./Trips.module.css";
 
 import TripForm from "../../components/trips/TripForm/TripForm";
 import TripTable from "../../components/trips/TripTable/TripTable";
 import SearchBar from "../../components/trips/SearchBar/SearchBar";
 
-// TODO: GET /api/vehicles
-const vehicles = [
-  {
-    id: 1,
-    registrationNumber: "DL01AB1234",
-    vehicleName: "Tata Ace",
-    status: "Available",
-  },
-  {
-    id: 2,
-    registrationNumber: "DL02CD5678",
-    vehicleName: "Ashok Leyland",
-    status: "On Trip",
-  },
-  {
-    id: 3,
-    registrationNumber: "DL03EF4321",
-    vehicleName: "Mahindra Pickup",
-    status: "Available",
-  },
-];
+import {
+  getTrips,
+  createTrip,
+  updateTrip,
+  deleteTrip,
+} from "../../services/tripService";
 
-// TODO: GET /api/drivers
-const drivers = [
-  {
-    id: 1,
-    name: "Rahul Sharma",
-    status: "Available",
-  },
-  {
-    id: 2,
-    name: "Amit Kumar",
-    status: "On Trip",
-  },
-  {
-    id: 3,
-    name: "Rohit Verma",
-    status: "Available",
-  },
-];
-
-// TODO: GET /api/trips
-const initialTrips = [
-  {
-    id: 101,
-    source: "Delhi",
-    destination: "Noida",
-    vehicleId: 1,
-    driverId: 1,
-    cargoWeight: 800,
-    plannedDistance: 25,
-    status: "Draft",
-  },
-  {
-    id: 102,
-    source: "Ghaziabad",
-    destination: "Gurgaon",
-    vehicleId: 3,
-    driverId: 3,
-    cargoWeight: 1200,
-    plannedDistance: 48,
-    status: "Dispatched",
-  },
-];
+import { getVehicles } from "../../services/vehicleService";
+import { getDrivers } from "../../services/driverService";
 
 function Trips() {
-  const [trips, setTrips] = useState(initialTrips);
+  const [trips, setTrips] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTrip, setEditingTrip] = useState(null);
 
+  // =========================
+  // LOAD DATA
+  // =========================
+
+  const fetchTrips = async () => {
+    try {
+      const response = await getTrips();
+
+      const data =
+        response.data?.data ||
+        response.data?.trips ||
+        response.data ||
+        [];
+
+      setTrips(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(
+        "Error fetching trips:",
+        error.response?.data || error.message
+      );
+
+      setTrips([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchVehicles = async () => {
+    try {
+      const response = await getVehicles();
+
+      const data =
+        response.data?.vehicles ||
+        response.data?.data ||
+        [];
+
+      setVehicles(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(
+        "Error fetching vehicles:",
+        error.response?.data || error.message
+      );
+
+      setVehicles([]);
+    }
+  };
+
+  const fetchDrivers = async () => {
+    try {
+      const response = await getDrivers();
+
+      const data =
+        response.data?.data ||
+        response.data ||
+        [];
+
+      setDrivers(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(
+        "Error fetching drivers:",
+        error.response?.data || error.message
+      );
+
+      setDrivers([]);
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadData = async () => {
+      try {
+        const [tripsResponse, vehiclesResponse, driversResponse] =
+          await Promise.all([
+            getTrips(),
+            getVehicles(),
+            getDrivers(),
+          ]);
+
+        if (cancelled) return;
+
+        const tripData =
+          tripsResponse.data?.data ||
+          tripsResponse.data?.trips ||
+          tripsResponse.data ||
+          [];
+
+        const vehicleData =
+          vehiclesResponse.data?.vehicles ||
+          vehiclesResponse.data?.data ||
+          [];
+
+        const driverData =
+          driversResponse.data?.data ||
+          driversResponse.data ||
+          [];
+
+        setTrips(Array.isArray(tripData) ? tripData : []);
+        setVehicles(Array.isArray(vehicleData) ? vehicleData : []);
+        setDrivers(Array.isArray(driverData) ? driverData : []);
+      } catch (error) {
+        if (!cancelled) {
+          console.error(
+            "Error loading trips page:",
+            error.response?.data || error.message
+          );
+
+          setTrips([]);
+          setVehicles([]);
+          setDrivers([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // =========================
+  // FILTER
+  // =========================
+
   const filteredTrips = useMemo(() => {
+    const searchValue = search.toLowerCase().trim();
+
     return trips.filter((trip) => {
-      const vehicle = vehicles.find((v) => v.id === trip.vehicleId);
-      const driver = drivers.find((d) => d.id === trip.driverId);
+      const vehicleName =
+        trip.vehicle?.name ||
+        trip.vehicle?.registrationNumber ||
+        "";
+
+      const driverName =
+        trip.driver?.name || "";
+
+      const source = trip.source || "";
+      const destination = trip.destination || "";
 
       const matchSearch =
-        trip.source.toLowerCase().includes(search.toLowerCase()) ||
-        trip.destination.toLowerCase().includes(search.toLowerCase()) ||
-        vehicle?.vehicleName.toLowerCase().includes(search.toLowerCase()) ||
-        driver?.name.toLowerCase().includes(search.toLowerCase());
+        source.toLowerCase().includes(searchValue) ||
+        destination.toLowerCase().includes(searchValue) ||
+        vehicleName.toLowerCase().includes(searchValue) ||
+        driverName.toLowerCase().includes(searchValue);
 
       const matchStatus =
-        statusFilter === "All" || trip.status === statusFilter;
+        statusFilter === "All" ||
+        trip.status === statusFilter;
 
       return matchSearch && matchStatus;
     });
   }, [trips, search, statusFilter]);
 
-  function handleCreate(data) {
-    if (editingTrip) {
-      // TODO: PUT /api/trips/:id
+  // =========================
+  // STATS
+  // =========================
 
-      setTrips((prev) =>
-        prev.map((trip) =>
-          trip.id === editingTrip.id
-            ? {
-                ...data,
-                id: editingTrip.id,
-              }
-            : trip
-        )
-      );
-    } else {
-      // TODO: POST /api/trips
+  const tripStats = useMemo(() => {
+    return {
+      total: trips.length,
 
-      setTrips((prev) => [
-        ...prev,
-        {
-          ...data,
-          id: Date.now(),
-          status: "Draft",
-        },
-      ]);
+      draft: trips.filter(
+        (trip) => trip.status === "Draft"
+      ).length,
+
+      dispatched: trips.filter(
+        (trip) => trip.status === "Dispatched"
+      ).length,
+
+      completed: trips.filter(
+        (trip) => trip.status === "Completed"
+      ).length,
+
+      cancelled: trips.filter(
+        (trip) => trip.status === "Cancelled"
+      ).length,
+    };
+  }, [trips]);
+
+  // =========================
+  // ADD
+  // =========================
+
+  function handleAdd() {
+    setEditingTrip(null);
+    setIsModalOpen(true);
+  }
+
+  // =========================
+  // EDIT
+  // =========================
+
+  function handleEdit(trip) {
+    setEditingTrip(trip);
+    setIsModalOpen(true);
+  }
+
+  // =========================
+  // DELETE
+  // =========================
+
+  async function handleDelete(id) {
+    if (!window.confirm("Delete this trip?")) {
+      return;
     }
 
-    setEditingTrip(null);
-    setIsModalOpen(false);
+    try {
+      await deleteTrip(id);
+      await fetchTrips();
+    } catch (error) {
+      console.error(
+        "Delete trip error:",
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to delete trip"
+      );
+    }
   }
 
-  function handleDelete(id) {
-    if (!window.confirm("Delete this trip?")) return;
+  // =========================
+  // CREATE / UPDATE
+  // =========================
 
-    // TODO: DELETE /api/trips/:id
+  async function handleSave(data) {
+    try {
+      if (editingTrip) {
+        const id =
+          editingTrip._id ||
+          editingTrip.id;
 
-    setTrips((prev) => prev.filter((trip) => trip.id !== id));
+        await updateTrip(id, data);
+      } else {
+        await createTrip(data);
+      }
+
+      await fetchTrips();
+
+      setEditingTrip(null);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error(
+        "Save trip error:",
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to save trip"
+      );
+    }
   }
+
+  // =========================
+  // AVAILABLE RESOURCES
+  // =========================
+
+  const availableVehicles = vehicles.filter(
+    (vehicle) =>
+      vehicle.status === "Available" ||
+      vehicle._id === editingTrip?.vehicle?._id
+  );
+
+  const availableDrivers = drivers.filter(
+    (driver) =>
+      driver.status === "Available" ||
+      driver._id === editingTrip?.driver?._id
+  );
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <div className={styles.header}>
+
+        {/* HEADER */}
+
+        <header className={styles.header}>
           <div>
+            <div className={styles.breadcrumb}>
+              Fleet Management
+            </div>
+
             <h1>Trips</h1>
-            <p>Create and manage transport trips.</p>
+
+            <p>
+              Create, dispatch and monitor transport trips.
+            </p>
           </div>
 
           <button
-            className={styles.button}
-            onClick={() => {
-              setEditingTrip(null);
-              setIsModalOpen(true);
-            }}
+            type="button"
+            className={styles.addButton}
+            onClick={handleAdd}
           >
+            <Plus size={18} />
             Create Trip
           </button>
-        </div>
+        </header>
 
-        <SearchBar
-          search={search}
-          setSearch={setSearch}
-          status={statusFilter}
-          setStatus={setStatusFilter}
-        />
+        {/* STATS */}
 
-        <TripTable
-          trips={filteredTrips}
-          vehicles={vehicles}
-          drivers={drivers}
-          onEdit={(trip) => {
-            setEditingTrip(trip);
-            setIsModalOpen(true);
-          }}
-          onDelete={handleDelete}
-        />
+        {!loading && (
+          <section className={styles.statsGrid}>
+
+            <div className={styles.statCard}>
+              <div
+                className={`${styles.statIcon} ${styles.blue}`}
+              >
+                <Route size={19} />
+              </div>
+
+              <div>
+                <span>Total Trips</span>
+                <strong>{tripStats.total}</strong>
+              </div>
+            </div>
+
+            <div className={styles.statCard}>
+              <div
+                className={`${styles.statIcon} ${styles.gray}`}
+              >
+                <FileText size={19} />
+              </div>
+
+              <div>
+                <span>Draft</span>
+                <strong>{tripStats.draft}</strong>
+              </div>
+            </div>
+
+            <div className={styles.statCard}>
+              <div
+                className={`${styles.statIcon} ${styles.orange}`}
+              >
+                <Send size={19} />
+              </div>
+
+              <div>
+                <span>Dispatched</span>
+                <strong>{tripStats.dispatched}</strong>
+              </div>
+            </div>
+
+            <div className={styles.statCard}>
+              <div
+                className={`${styles.statIcon} ${styles.green}`}
+              >
+                <CheckCircle2 size={19} />
+              </div>
+
+              <div>
+                <span>Completed</span>
+                <strong>{tripStats.completed}</strong>
+              </div>
+            </div>
+
+            <div className={styles.statCard}>
+              <div
+                className={`${styles.statIcon} ${styles.red}`}
+              >
+                <XCircle size={19} />
+              </div>
+
+              <div>
+                <span>Cancelled</span>
+                <strong>{tripStats.cancelled}</strong>
+              </div>
+            </div>
+
+          </section>
+        )}
+
+        {/* SEARCH */}
+
+        <section className={styles.filterSection}>
+          <div className={styles.filterHeader}>
+            <div>
+              <h2>Trip Registry</h2>
+
+              <span>
+                {filteredTrips.length} trip
+                {filteredTrips.length !== 1
+                  ? "s"
+                  : ""}{" "}
+                found
+              </span>
+            </div>
+          </div>
+
+          <SearchBar
+            search={search}
+            setSearch={setSearch}
+            status={statusFilter}
+            setStatus={setStatusFilter}
+          />
+        </section>
+
+        {/* TABLE */}
+
+        {loading ? (
+          <div className={styles.loadingCard}>
+            <div className={styles.loadingIcon}>
+              <Route size={22} />
+            </div>
+
+            <div className={styles.loadingContent}>
+              <div className={styles.loadingLine} />
+              <div className={styles.loadingLineSmall} />
+            </div>
+          </div>
+        ) : (
+          <div className={styles.tableCard}>
+            <TripTable
+              trips={filteredTrips}
+              vehicles={vehicles}
+              drivers={drivers}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </div>
+        )}
+
+        {/* FORM */}
 
         {isModalOpen && (
           <TripForm
             trip={editingTrip}
-            vehicles={vehicles.filter((v) => v.status === "Available")}
-            drivers={drivers.filter((d) => d.status === "Available")}
-            onSave={handleCreate}
+            vehicles={availableVehicles}
+            drivers={availableDrivers}
+            onSave={handleSave}
             onCancel={() => {
               setEditingTrip(null);
               setIsModalOpen(false);
             }}
           />
         )}
+
       </div>
     </div>
   );

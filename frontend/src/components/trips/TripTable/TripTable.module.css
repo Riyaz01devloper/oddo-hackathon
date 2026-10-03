@@ -1,66 +1,361 @@
 .wrapper {
   width: 100%;
+  background: #ffffff;
+}
+
+.tableScroll {
+  width: 100%;
   overflow-x: auto;
 }
 
 .table {
   width: 100%;
-  min-width: 1050px;
+  min-width: 1100px;
   border-collapse: collapse;
 }
 
-.table th,
-.table td {
-  padding: 14px;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 14px;
+/* =========================
+   HEADER
+========================= */
+
+.table thead {
+  background: #f8fafc;
 }
 
 .table th {
-  background: #f8fafc;
-  color: #374151;
+  height: 48px;
+  padding: 0 18px;
+  border-bottom: 1px solid #e5eaf1;
+  color: #64748b;
+  font-size: 11px;
   font-weight: 600;
+  text-align: left;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.actionsHeader {
+  text-align: right !important;
+}
+
+/* =========================
+   ROWS
+========================= */
+
+.table tbody tr {
+  transition: background 0.15s ease;
 }
 
 .table tbody tr:hover {
-  background: #fafafa;
+  background: #fafcff;
 }
+
+.table td {
+  height: 78px;
+  padding: 10px 18px;
+  border-bottom: 1px solid #eef2f6;
+  color: #334155;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* =========================
+   TRIP
+========================= */
+
+.tripCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 90px;
+}
+
+.tripIcon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.tripInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tripInfo strong {
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tripInfo span {
+  color: #94a3b8;
+  font-size: 10px;
+}
+
+/* =========================
+   ROUTE
+========================= */
+
+.route {
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.location span:last-child {
+  overflow: hidden;
+  max-width: 125px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sourceDot,
+.destinationDot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.sourceDot {
+  background: #2563eb;
+}
+
+.destinationDot {
+  background: #16a34a;
+}
+
+.routeLine {
+  width: 1px;
+  height: 8px;
+  margin-left: 3px;
+  border-left: 1px dashed #cbd5e1;
+}
+
+/* =========================
+   VEHICLE / DRIVER
+========================= */
+
+.resource {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 145px;
+}
+
+.resourceIcon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.driverIcon {
+  color: #7c3aed;
+  background: #f5f3ff;
+}
+
+.resource > div:last-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.resource strong {
+  overflow: hidden;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resource span {
+  overflow: hidden;
+  color: #94a3b8;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================
+   NUMBERS
+========================= */
+
+.number {
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.number small,
+.distance small {
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.distance {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #475569;
+}
+
+.distance svg {
+  color: #94a3b8;
+}
+
+.distance span {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* =========================
+   ACTIONS
+========================= */
 
 .actions {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
 }
 
 .edit,
 .delete {
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 9px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 13px;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .edit {
-  background: #2563eb;
-  color: white;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
 }
 
 .edit:hover {
-  background: #1d4ed8;
+  border-color: #bfdbfe;
+  background: #f8fafc;
+  color: #2563eb;
 }
 
 .delete {
-  background: #ef4444;
-  color: white;
+  border: 1px solid #fee2e2;
+  background: #fffafa;
+  color: #dc2626;
 }
 
 .delete:hover {
-  background: #dc2626;
+  border-color: #fecaca;
+  background: #fef2f2;
 }
 
+/* =========================
+   EMPTY
+========================= */
+
 .empty {
-  text-align: center;
-  padding: 24px;
-  color: #6b7280;
+  height: 260px !important;
+  padding: 30px !important;
+  text-align: center !important;
+}
+
+.emptyState {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.emptyIcon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.emptyState strong {
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.emptyState span {
+  margin-top: 5px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 800px) {
+  .table {
+    min-width: 1000px;
+  }
+
+  .table th,
+  .table td {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .actions span {
+    display: none;
+  }
+
+  .edit,
+  .delete {
+    width: 32px;
+    padding: 0;
+  }
 }

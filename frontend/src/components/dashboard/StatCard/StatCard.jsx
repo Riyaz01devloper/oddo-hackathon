@@ -1,19 +1,33 @@
-// components/dashboard/StatCard/StatCard.jsx
-
 import styles from "./StatCard.module.css";
 
-function StatCard({ title, value, Icon }) {
+function StatCard({
+  title,
+  value,
+  Icon,
+  description,
+  type = "primary",
+}) {
   return (
     <article className={styles.card}>
       <div className={styles.top}>
-        <span className={styles.icon}>
-          <Icon size={24} />
-        </span>
+        <div className={`${styles.icon} ${styles[type]}`}>
+          <Icon size={19} strokeWidth={2} />
+        </div>
+
+        <span className={styles.more}>•••</span>
       </div>
 
-      <h3>{title}</h3>
+      <div className={styles.content}>
+        <h3>{title}</h3>
 
-      <p>{value}</p>
+        <p className={styles.value}>{value}</p>
+
+        {description && (
+          <span className={styles.description}>
+            {description}
+          </span>
+        )}
+      </div>
     </article>
   );
 }
