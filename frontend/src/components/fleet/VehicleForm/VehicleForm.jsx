@@ -12,42 +12,64 @@ const initialForm = {
 };
 
 function VehicleForm({ vehicle, onSave, onCancel }) {
-  const [formData, setFormData] = useState(initialForm);
-
-  useEffect(() => {
+  const [formData, setFormData] = useState(() => {
     if (vehicle) {
-      setFormData({
+      return {
         registrationNumber: vehicle.registrationNumber || "",
         name: vehicle.name || "",
         type: vehicle.type || "Truck",
-        maxLoadCapacity: vehicle.maxLoadCapacity || "",
-        odometer: vehicle.odometer || "",
-        acquisitionCost: vehicle.acquisitionCost || "",
+        maxLoadCapacity: vehicle.maxLoadCapacity ?? "",
+        odometer: vehicle.odometer ?? "",
+        acquisitionCost: vehicle.acquisitionCost ?? "",
         status: vehicle.status || "Available",
-      });
-    } else {
-      setFormData(initialForm);
+      };
     }
-  }, [vehicle]);
+    return initialForm;
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "Escape") {
+        onCancel();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
 
   function handleChange(e) {
     const { name, value } = e.target;
-
+    setFormError("");
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+    if (submitting) return;
 
-    onSave({
-      ...formData,
-      maxLoadCapacity: Number(formData.maxLoadCapacity),
-      odometer: Number(formData.odometer),
-      acquisitionCost: Number(formData.acquisitionCost),
-    });
+    if (Number(formData.maxLoadCapacity) < 0 || Number(formData.odometer) < 0 || Number(formData.acquisitionCost) < 0) {
+      setFormError("Load capacity, odometer, and acquisition cost cannot be negative.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await onSave({
+        ...formData,
+        registrationNumber: formData.registrationNumber.trim(),
+        name: formData.name.trim(),
+        maxLoadCapacity: Number(formData.maxLoadCapacity),
+        odometer: Number(formData.odometer),
+        acquisitionCost: Number(formData.acquisitionCost),
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -136,17 +158,24 @@ function VehicleForm({ vehicle, onSave, onCancel }) {
             </select>
           </div>
 
+          {formError && (
+            <div style={{ color: "#ef4444", fontSize: "13px", marginTop: "8px", fontWeight: "500" }}>
+              {formError}
+            </div>
+          )}
+
           <div className={styles.buttons}>
             <button
               type="button"
               className={styles.cancel}
               onClick={onCancel}
+              disabled={submitting}
             >
               Cancel
             </button>
 
-            <button type="submit" className={styles.save}>
-              Save
+            <button type="submit" className={styles.save} disabled={submitting}>
+              {submitting ? "Saving..." : "Save"}
             </button>
           </div>
         </form>

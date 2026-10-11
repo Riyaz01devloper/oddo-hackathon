@@ -22,47 +22,71 @@ function getVehicleLabel(vehicle) {
 }
 
 function FuelForm({ record, vehicles = [], onSave, onCancel }) {
-  const [formData, setFormData] = useState(initialForm);
-
-  useEffect(() => {
+  const [formData, setFormData] = useState(() => {
     if (record) {
-      setFormData({
+      return {
         vehicleId: getVehicleId(record.vehicle) || record.vehicleId || "",
         date: record.date
           ? new Date(record.date).toISOString().split("T")[0]
           : "",
         liters: record.liters ?? "",
         cost: record.cost ?? "",
-      });
-    } else {
-      setFormData(initialForm);
+      };
     }
-  }, [record]);
+    return initialForm;
+  });
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "Escape") {
+        onCancel();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
 
   function handleChange(e) {
     const { name, value } = e.target;
-
+    setFormError("");
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     if (!formData.vehicleId) {
-      alert("Please select a vehicle");
+      setFormError("Please select a vehicle.");
       return;
     }
 
-    onSave({
-      vehicle: formData.vehicleId,
-      vehicleId: formData.vehicleId,
-      date: formData.date,
-      liters: Number(formData.liters),
-      cost: Number(formData.cost),
-    });
+    if (!formData.liters || Number(formData.liters) <= 0) {
+      setFormError("Liters must be greater than 0.");
+      return;
+    }
+
+    if (!formData.cost || Number(formData.cost) <= 0) {
+      setFormError("Cost must be greater than 0.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await onSave({
+        vehicle: formData.vehicleId,
+        vehicleId: formData.vehicleId,
+        date: formData.date || new Date().toISOString().split("T")[0],
+        liters: Number(formData.liters),
+        cost: Number(formData.cost),
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -134,17 +158,24 @@ function FuelForm({ record, vehicles = [], onSave, onCancel }) {
             />
           </div>
 
+          {formError && (
+            <div style={{ color: "#ef4444", fontSize: "13px", marginTop: "8px", fontWeight: "500" }}>
+              {formError}
+            </div>
+          )}
+
           <div className={styles.buttons}>
             <button
               type="button"
               className={styles.cancel}
               onClick={onCancel}
+              disabled={submitting}
             >
               Cancel
             </button>
 
-            <button type="submit" className={styles.save}>
-              Save
+            <button type="submit" className={styles.save} disabled={submitting}>
+              {submitting ? "Saving..." : "Save"}
             </button>
           </div>
         </form>

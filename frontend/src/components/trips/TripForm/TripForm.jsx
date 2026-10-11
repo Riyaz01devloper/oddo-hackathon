@@ -26,12 +26,9 @@ function TripForm({
   onSave,
   onCancel,
 }) {
-  const [formData, setFormData] = useState(initialForm);
-  const [errors, setErrors] = useState({});
-
-  useEffect(() => {
+  const [formData, setFormData] = useState(() => {
     if (trip) {
-      setFormData({
+      return {
         source: trip.source || "",
         destination: trip.destination || "",
         vehicleId:
@@ -46,13 +43,22 @@ function TripForm({
           "",
         cargoWeight: trip.cargoWeight ?? "",
         plannedDistance: trip.plannedDistance ?? "",
-      });
-    } else {
-      setFormData(initialForm);
+      };
     }
+    return initialForm;
+  });
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
-    setErrors({});
-  }, [trip]);
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "Escape") {
+        onCancel();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -95,6 +101,17 @@ function TripForm({
     ) {
       validationErrors.cargoWeight =
         "Cargo weight must be greater than 0.";
+    } else if (formData.vehicleId) {
+      const selectedVehicle = vehicles.find(
+        (v) => (v._id || v.id) === formData.vehicleId
+      );
+      if (
+        selectedVehicle &&
+        selectedVehicle.maxLoadCapacity &&
+        Number(formData.cargoWeight) > selectedVehicle.maxLoadCapacity
+      ) {
+        validationErrors.cargoWeight = `Cargo weight exceeds vehicle capacity (${selectedVehicle.maxLoadCapacity} kg).`;
+      }
     }
 
     if (
@@ -110,19 +127,24 @@ function TripForm({
     return Object.keys(validationErrors).length === 0;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
-    if (!validate()) return;
+    if (!validate() || submitting) return;
 
-    onSave({
-      source: formData.source.trim(),
-      destination: formData.destination.trim(),
-      vehicle: formData.vehicleId,
-      driver: formData.driverId,
-      cargoWeight: Number(formData.cargoWeight),
-      plannedDistance: Number(formData.plannedDistance),
-    });
+    try {
+      setSubmitting(true);
+      await onSave({
+        source: formData.source.trim(),
+        destination: formData.destination.trim(),
+        vehicle: formData.vehicleId,
+        driver: formData.driverId,
+        cargoWeight: Number(formData.cargoWeight),
+        plannedDistance: Number(formData.plannedDistance),
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function getVehicleId(vehicle) {
@@ -366,6 +388,7 @@ function TripForm({
               type="button"
               className={styles.cancel}
               onClick={onCancel}
+              disabled={submitting}
             >
               Cancel
             </button>
@@ -373,8 +396,9 @@ function TripForm({
             <button
               type="submit"
               className={styles.save}
+              disabled={submitting}
             >
-              {trip ? "Update Trip" : "Create Trip"}
+              {submitting ? "Saving..." : trip ? "Update Trip" : "Create Trip"}
             </button>
           </div>
         </form>

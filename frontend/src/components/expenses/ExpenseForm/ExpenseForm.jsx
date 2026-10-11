@@ -32,11 +32,9 @@ function getVehicleLabel(vehicle) {
 }
 
 function ExpenseForm({ record, vehicles = [], onSave, onCancel }) {
-  const [formData, setFormData] = useState(initialForm);
-
-  useEffect(() => {
+  const [formData, setFormData] = useState(() => {
     if (record) {
-      setFormData({
+      return {
         vehicleId: getVehicleId(record.vehicle) || record.vehicleId || "",
         type: record.type || record.expenseType || "",
         amount: record.amount ?? "",
@@ -46,43 +44,64 @@ function ExpenseForm({ record, vehicles = [], onSave, onCancel }) {
               .split("T")[0]
           : "",
         description: record.description || "",
-      });
-    } else {
-      setFormData(initialForm);
+      };
     }
-  }, [record]);
+    return initialForm;
+  });
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "Escape") {
+        onCancel();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
 
   function handleChange(e) {
     const { name, value } = e.target;
-
+    setFormError("");
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     if (!formData.vehicleId) {
-      alert("Please select a vehicle");
+      setFormError("Please select a vehicle.");
       return;
     }
 
     if (!formData.type) {
-      alert("Please select an expense type");
+      setFormError("Please select an expense type.");
       return;
     }
 
-    onSave({
-      vehicle: formData.vehicleId,
-      vehicleId: formData.vehicleId,
-      type: formData.type,
-      expenseType: formData.type,
-      amount: Number(formData.amount),
-      date: formData.date,
-      description: formData.description,
-    });
+    if (!formData.amount || Number(formData.amount) <= 0) {
+      setFormError("Amount must be greater than 0.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await onSave({
+        vehicle: formData.vehicleId,
+        vehicleId: formData.vehicleId,
+        type: formData.type,
+        expenseType: formData.type,
+        amount: Number(formData.amount),
+        date: formData.date || new Date().toISOString().split("T")[0],
+        description: formData.description?.trim() || "",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -158,17 +177,24 @@ function ExpenseForm({ record, vehicles = [], onSave, onCancel }) {
             />
           </div>
 
+          {formError && (
+            <div style={{ color: "#ef4444", fontSize: "13px", marginTop: "8px", fontWeight: "500" }}>
+              {formError}
+            </div>
+          )}
+
           <div className={styles.buttons}>
             <button
               type="button"
               className={styles.cancel}
               onClick={onCancel}
+              disabled={submitting}
             >
               Cancel
             </button>
 
-            <button type="submit" className={styles.save}>
-              Save
+            <button type="submit" className={styles.save} disabled={submitting}>
+              {submitting ? "Saving..." : "Save"}
             </button>
           </div>
         </form>

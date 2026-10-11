@@ -1,6 +1,8 @@
 import "./App.css";
 import { Outlet } from "react-router-dom";
+import { Suspense } from "react";
 import Sidebar from "./components/layout/Sidebar";
+import LoadingSpinner from "./components/common/LoadingSpinner";
 
 function App() {
   return (
@@ -9,7 +11,9 @@ function App() {
 
       <main className="main-content">
         <div className="content">
-          <Outlet />
+          <Suspense fallback={<LoadingSpinner message="Loading page..." />}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
     </div>

@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 
 const expenseSchema = new mongoose.Schema({
-
     vehicle: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Vehicle",
-        required: true
+        required: true,
+        index: true
     },
 
     type: {
@@ -18,18 +18,22 @@ const expenseSchema = new mongoose.Schema({
             "Insurance",
             "Other"
         ],
-        required: true
+        required: true,
+        index: true
     },
 
     amount: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
 
     description: {
-        type: String
+        type: String,
+        trim: true
     }
-
 }, { timestamps: true });
+
+expenseSchema.index({ vehicle: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Expense", expenseSchema);

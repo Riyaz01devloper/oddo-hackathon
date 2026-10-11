@@ -1,5 +1,4 @@
 const express = require("express");
-
 const router = express.Router();
 
 const Vehicle = require("../models/vehicle.model.js");
@@ -20,9 +19,9 @@ const authorizeRoles = require("../middlewares/role.middleware.js");
 const {
   validateObjectId,
 } = require("../middlewares/validator.middleware.js");
+const ApiResponse = require("../utils/ApiResponse.js");
 
-// ANALYTICS
-
+// ANALYTICS ROLES
 const analyticsRoles = [
   "Fleet Manager",
   "Safety Officer",
@@ -81,8 +80,7 @@ router.get(
   vehicleCosts
 );
 
-// DASHBOARD
-
+// DASHBOARD OVERVIEW (Optimized with parallel MongoDB aggregations)
 router.get(
   "/",
   verifyJWT,
@@ -93,144 +91,85 @@ router.get(
   ),
   async (req, res) => {
     try {
-      // -----------------------------
-      // VEHICLES
-      // -----------------------------
+      const [vehicleStats, tripStats, driversOnDuty, maintenancePending] = await Promise.all([
+        // Single aggregation for all vehicle statuses
+        Vehicle.aggregate([
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 }
+            }
+          }
+        ]),
 
-      const [
-        activeVehicles,
-        availableVehicles,
-        maintenanceVehicles,
-        retiredVehicles,
-        totalVehicles,
-      ] = await Promise.all([
-        Vehicle.countDocuments({
-          status: "OnTrip",
-        }),
+        // Single aggregation for all trip statuses
+        Trip.aggregate([
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 }
+            }
+          }
+        ]),
 
-        Vehicle.countDocuments({
-          status: "Available",
-        }),
+        // Active drivers on duty
+        Driver.countDocuments({ status: "OnTrip" }),
 
-        Vehicle.countDocuments({
-          status: "InShop",
-        }),
-
-        Vehicle.countDocuments({
-          status: "Retired",
-        }),
-
-        Vehicle.countDocuments(),
+        // Pending maintenance in shop
+        Maintenance.countDocuments({ status: "InShop" })
       ]);
 
-      // -----------------------------
-      // TRIPS
-      // -----------------------------
+      // Map vehicle counts
+      const vehicleMap = new Map(vehicleStats.map(item => [item._id, item.count]));
+      const activeVehicles = vehicleMap.get("OnTrip") || 0;
+      const availableVehicles = vehicleMap.get("Available") || 0;
+      const maintenanceVehicles = vehicleMap.get("InShop") || 0;
+      const retiredVehicles = vehicleMap.get("Retired") || 0;
+      const totalVehicles = activeVehicles + availableVehicles + maintenanceVehicles + retiredVehicles;
 
-      const [
-        activeTrips,
-        pendingTrips,
-      ] = await Promise.all([
-        Trip.countDocuments({
-          status: "Dispatched",
-        }),
+      // Map trip counts
+      const tripMap = new Map(tripStats.map(item => [item._id, item.count]));
+      const activeTrips = tripMap.get("Dispatched") || 0;
+      const pendingTrips = tripMap.get("Draft") || 0;
 
-        Trip.countDocuments({
-          status: "Draft",
-        }),
-      ]);
+      // Fleet utilization: active operational vehicles / total operational vehicles
+      const operationalVehicles = availableVehicles + activeVehicles + maintenanceVehicles;
+      const utilization = operationalVehicles > 0
+        ? Number(((activeVehicles / operationalVehicles) * 100).toFixed(2))
+        : 0;
 
-      // -----------------------------
-      // DRIVERS
-      // -----------------------------
-
-      const driversOnDuty =
-        await Driver.countDocuments({
-          status: "OnTrip",
-        });
-
-      // -----------------------------
-      // MAINTENANCE
-      // -----------------------------
-
-      const maintenancePending =
-        await Maintenance.countDocuments({
-          status: "InShop",
-        });
-
-      // -----------------------------
-      // FLEET UTILIZATION
-      // -----------------------------
-
-      const operationalVehicles =
-        availableVehicles +
-        activeVehicles +
-        maintenanceVehicles;
-
-      const fleetUtilization =
-        operationalVehicles > 0
-          ? Number(
-              (
-                (activeVehicles /
-                  operationalVehicles) *
-                100
-              ).toFixed(2)
-            )
-          : 0;
-
-      // -----------------------------
-      // RESPONSE
-      // -----------------------------
-
-      return res.status(200).json({
-        success: true,
-        message: "Dashboard stats fetched successfully",
-
-        data: {
-          totalVehicles,
-
-          activeVehicles,
-
-          availableVehicles,
-
-          vehiclesInMaintenance:
-            maintenanceVehicles,
-
-          retiredVehicles,
-
-          activeTrips,
-
-          pendingTrips,
-
-          driversOnDuty,
-
-          maintenancePending,
-
-          fleetUtilization,
-
-          vehicleStatus: {
-            active: activeVehicles,
-
-            available: availableVehicles,
-
-            maintenance:
-              maintenanceVehicles,
-
-            inactive: retiredVehicles,
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            totalVehicles,
+            activeVehicles,
+            availableVehicles,
+            vehiclesInMaintenance: maintenanceVehicles,
+            retiredVehicles,
+            activeTrips,
+            pendingTrips,
+            driversOnDuty,
+            maintenancePending,
+            fleetUtilization: utilization,
+            vehicleStatus: {
+              active: activeVehicles,
+              available: availableVehicles,
+              maintenance: maintenanceVehicles,
+              inactive: retiredVehicles,
+            },
           },
-        },
-      });
-    } catch (error) {
-      console.error(
-        "Dashboard error:",
-        error
+          "Dashboard stats fetched successfully"
+        )
       );
-
+    } catch (error) {
+      console.error("Dashboard error:", error);
       return res.status(500).json({
+        statusCode: 500,
         success: false,
-        message:
-          "Failed to fetch dashboard data",
-        error: error.message,
+        data: null,
+        message: "Failed to fetch dashboard data",
+        errors: [error.message],
       });
     }
   }

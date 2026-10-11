@@ -5,6 +5,9 @@ import {
   User,
   Pencil,
   Trash2,
+  Send,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 
 import styles from "./TripTable.module.css";
@@ -16,6 +19,9 @@ function TripTable({
   drivers = [],
   onEdit,
   onDelete,
+  onDispatch,
+  onComplete,
+  onCancel,
 }) {
   // Supports both populated MongoDB references
   // and IDs if the backend returns unpopulated references.
@@ -211,27 +217,61 @@ function TripTable({
 
                     <td>
                       <div className={styles.actions}>
-                        <button
-                          type="button"
-                          className={styles.edit}
-                          onClick={() =>
-                            onEdit(trip)
-                          }
-                          title="Edit trip"
-                        >
-                          <Pencil size={15} />
-                          <span>Edit</span>
-                        </button>
+                        {trip.status === "Draft" && onDispatch && (
+                          <button
+                            type="button"
+                            className={styles.dispatch}
+                            onClick={() => onDispatch(tripId)}
+                            title="Dispatch trip"
+                          >
+                            <Send size={13} />
+                            <span>Dispatch</span>
+                          </button>
+                        )}
+
+                        {trip.status === "Dispatched" && onComplete && (
+                          <button
+                            type="button"
+                            className={styles.complete}
+                            onClick={() => onComplete(tripId)}
+                            title="Complete trip"
+                          >
+                            <CheckCircle size={13} />
+                            <span>Complete</span>
+                          </button>
+                        )}
+
+                        {(trip.status === "Draft" || trip.status === "Dispatched") && onCancel && (
+                          <button
+                            type="button"
+                            className={styles.cancel}
+                            onClick={() => onCancel(tripId)}
+                            title="Cancel trip"
+                          >
+                            <XCircle size={13} />
+                            <span>Cancel</span>
+                          </button>
+                        )}
+
+                        {trip.status === "Draft" && (
+                          <button
+                            type="button"
+                            className={styles.edit}
+                            onClick={() => onEdit(trip)}
+                            title="Edit trip"
+                          >
+                            <Pencil size={13} />
+                            <span>Edit</span>
+                          </button>
+                        )}
 
                         <button
                           type="button"
                           className={styles.delete}
-                          onClick={() =>
-                            onDelete(tripId)
-                          }
+                          onClick={() => onDelete(tripId)}
                           title="Delete trip"
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={13} />
                           <span>Delete</span>
                         </button>
                       </div>

@@ -19,6 +19,9 @@ import {
   createTrip,
   updateTrip,
   deleteTrip,
+  dispatchTrip,
+  completeTrip,
+  cancelTrip,
 } from "../../services/tripService";
 
 import { getVehicles } from "../../services/vehicleService";
@@ -250,7 +253,7 @@ function Trips() {
 
     try {
       await deleteTrip(id);
-      await fetchTrips();
+      await Promise.all([fetchTrips(), fetchVehicles(), fetchDrivers()]);
     } catch (error) {
       console.error(
         "Delete trip error:",
@@ -260,6 +263,65 @@ function Trips() {
       alert(
         error.response?.data?.message ||
           "Failed to delete trip"
+      );
+    }
+  }
+
+  // =========================
+  // LIFECYCLE ACTIONS
+  // =========================
+
+  async function handleDispatch(id) {
+    try {
+      await dispatchTrip(id);
+      await Promise.all([fetchTrips(), fetchVehicles(), fetchDrivers()]);
+    } catch (error) {
+      console.error(
+        "Dispatch trip error:",
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to dispatch trip"
+      );
+    }
+  }
+
+  async function handleComplete(id) {
+    try {
+      await completeTrip(id);
+      await Promise.all([fetchTrips(), fetchVehicles(), fetchDrivers()]);
+    } catch (error) {
+      console.error(
+        "Complete trip error:",
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to complete trip"
+      );
+    }
+  }
+
+  async function handleCancel(id) {
+    if (!window.confirm("Are you sure you want to cancel this trip?")) {
+      return;
+    }
+
+    try {
+      await cancelTrip(id);
+      await Promise.all([fetchTrips(), fetchVehicles(), fetchDrivers()]);
+    } catch (error) {
+      console.error(
+        "Cancel trip error:",
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to cancel trip"
       );
     }
   }
@@ -280,7 +342,7 @@ function Trips() {
         await createTrip(data);
       }
 
-      await fetchTrips();
+      await Promise.all([fetchTrips(), fetchVehicles(), fetchDrivers()]);
 
       setEditingTrip(null);
       setIsModalOpen(false);
@@ -461,6 +523,9 @@ function Trips() {
               drivers={drivers}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onDispatch={handleDispatch}
+              onComplete={handleComplete}
+              onCancel={handleCancel}
             />
           </div>
         )}

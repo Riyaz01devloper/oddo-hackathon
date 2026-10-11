@@ -3,16 +3,21 @@ const mongoose = require('mongoose');
 const driverSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     licenseNumber: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        trim: true,
+        uppercase: true,
+        index: true
     },
     licenseCategory: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     licenseExpiry: {
         type: Date,
@@ -20,7 +25,8 @@ const driverSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     safetyScore: {
         type: Number,
@@ -32,9 +38,10 @@ const driverSchema = new mongoose.Schema({
         type: String,
         enum: ['Available', 'OnTrip', 'OffDuty', 'Suspended'],
         default: 'Available',
-        required: true
+        required: true,
+        index: true
     }
-})
+}, { timestamps: true });
 
 const Driver = mongoose.model('Driver', driverSchema);
 

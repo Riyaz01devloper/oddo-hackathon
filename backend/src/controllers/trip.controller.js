@@ -7,15 +7,53 @@ const ApiError = require("../utils/ApiError.js");
 const ApiResponse = require("../utils/ApiResponse.js");
 
 // ============================================================
-// GET ALL TRIPS
+// GET ALL TRIPS (with optional pagination & filtering)
 // ============================================================
 
 const getAllTrips = asyncHandler(async (req, res) => {
-    const trips = await Trip.find()
-        .populate("vehicle", "registrationNumber name")
-        .populate("driver", "name licenseNumber")
+    const { page, limit, status, vehicleId, driverId } = req.query;
+
+    const query = {};
+    if (status && status !== "All") query.status = status;
+    if (vehicleId) query.vehicle = vehicleId;
+    if (driverId) query.driver = driverId;
+
+    if (page) {
+        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 10));
+        const skip = (pageNum - 1) * limitNum;
+
+        const [trips, total] = await Promise.all([
+            Trip.find(query)
+                .populate("vehicle", "registrationNumber name type maxLoadCapacity")
+                .populate("driver", "name licenseNumber phone safetyScore")
+                .select("-__v")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum)
+                .lean(),
+            Trip.countDocuments(query)
+        ]);
+
+        return res.status(200).json({
+            statusCode: 200,
+            success: true,
+            data: trips,
+            trips,
+            pagination: {
+                page: pageNum,
+                limit: limitNum,
+                total,
+                totalPages: Math.ceil(total / limitNum)
+            }
+        });
+    }
+
+    const trips = await Trip.find(query)
+        .populate("vehicle", "registrationNumber name type maxLoadCapacity")
+        .populate("driver", "name licenseNumber phone safetyScore")
         .select("-__v")
-        .sort({ _id: -1 })
+        .sort({ createdAt: -1 })
         .lean();
 
     return res.status(200).json(
@@ -23,6 +61,32 @@ const getAllTrips = asyncHandler(async (req, res) => {
             200,
             trips,
             "Trips fetched successfully"
+        )
+    );
+});
+
+// ============================================================
+// GET TRIP BY ID
+// ============================================================
+
+const getTripById = asyncHandler(async (req, res) => {
+    const { tripId } = req.params;
+
+    const trip = await Trip.findById(tripId)
+        .populate("vehicle", "registrationNumber name type maxLoadCapacity")
+        .populate("driver", "name licenseNumber phone safetyScore")
+        .select("-__v")
+        .lean();
+
+    if (!trip) {
+        throw new ApiError(404, "Trip not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            trip,
+            "Trip fetched successfully"
         )
     );
 });
@@ -52,105 +116,88 @@ const draftTrip = asyncHandler(async (req, res) => {
     ) {
         throw new ApiError(
             400,
-            "All fields are required"
+            "All fields (source, destination, vehicle, driver, cargoWeight, plannedDistance) are required"
         );
     }
 
-    if (Number(cargoWeight) <= 0) {
-        throw new ApiError(
-            400,
-            "Cargo weight must be greater than 0"
-        );
+    const numCargo = Number(cargoWeight);
+    const numDist = Number(plannedDistance);
+
+    if (!Number.isFinite(numCargo) || numCargo <= 0) {
+        throw new ApiError(400, "Cargo weight must be a number greater than 0");
     }
 
-    if (Number(plannedDistance) <= 0) {
-        throw new ApiError(
-            400,
-            "Planned distance must be greater than 0"
-        );
+    if (!Number.isFinite(numDist) || numDist <= 0) {
+        throw new ApiError(400, "Planned distance must be a number greater than 0");
     }
 
-    // Find vehicle
+    // Find and validate vehicle
     const vehicleExists = await Vehicle.findById(vehicle);
-
     if (!vehicleExists) {
-        throw new ApiError(
-            404,
-            "Vehicle not found"
-        );
+        throw new ApiError(404, "Vehicle not found");
     }
 
-    // Find driver
-    const driverExists = await Driver.findById(driver);
-
-    if (!driverExists) {
-        throw new ApiError(
-            404,
-            "Driver not found"
-        );
-    }
-
-    // Vehicle availability
     if (vehicleExists.status !== "Available") {
         throw new ApiError(
             400,
-            "Vehicle is not available"
+            `Vehicle is currently ${vehicleExists.status}. Only 'Available' vehicles can be assigned.`
         );
     }
 
-    // Driver availability
+    // Vehicle capacity check
+    if (numCargo > vehicleExists.maxLoadCapacity) {
+        throw new ApiError(
+            400,
+            `Cargo weight (${numCargo} kg) exceeds vehicle's maximum load capacity (${vehicleExists.maxLoadCapacity} kg)`
+        );
+    }
+
+    // Find and validate driver
+    const driverExists = await Driver.findById(driver);
+    if (!driverExists) {
+        throw new ApiError(404, "Driver not found");
+    }
+
     if (driverExists.status !== "Available") {
         throw new ApiError(
             400,
-            "Driver is not available"
+            `Driver is currently ${driverExists.status}. Only 'Available' drivers can be assigned.`
         );
     }
 
-    // Vehicle capacity
-    if (
-        Number(cargoWeight) >
-        vehicleExists.maxLoadCapacity
-    ) {
-        throw new ApiError(
-            400,
-            "Cargo weight exceeds vehicle's maximum load capacity"
-        );
-    }
-
-    // Driver license validity
+    // Driver license validity check
     if (
         driverExists.licenseExpiry &&
         new Date(driverExists.licenseExpiry) < new Date()
     ) {
         throw new ApiError(
             400,
-            "Driver's license has expired"
+            `Driver's license expired on ${new Date(driverExists.licenseExpiry).toLocaleDateString()}`
         );
     }
 
     // Create trip
     const trip = await Trip.create({
-        source: source.trim(),
-        destination: destination.trim(),
+        source: String(source).trim(),
+        destination: String(destination).trim(),
         vehicle,
         driver,
-        cargoWeight: Number(cargoWeight),
-        plannedDistance: Number(plannedDistance),
+        cargoWeight: numCargo,
+        plannedDistance: numDist,
         status: "Draft",
     });
 
-    // Reserve vehicle
+    // Reserve vehicle and driver
     vehicleExists.status = "OnTrip";
     await vehicleExists.save();
 
-    // Reserve driver
     driverExists.status = "OnTrip";
     await driverExists.save();
 
     // Return populated trip
     const createdTrip = await Trip.findById(trip._id)
-        .populate("vehicle", "registrationNumber name")
-        .populate("driver", "name licenseNumber")
+        .populate("vehicle", "registrationNumber name type maxLoadCapacity")
+        .populate("driver", "name licenseNumber phone safetyScore")
         .select("-__v")
         .lean();
 
@@ -179,17 +226,20 @@ const updateTrip = asyncHandler(async (req, res) => {
         plannedDistance,
     } = req.body;
 
-    // Find existing trip
     const trip = await Trip.findById(tripId);
 
     if (!trip) {
+        throw new ApiError(404, "Trip not found");
+    }
+
+    // Business rule: Only draft trips can be edited
+    if (trip.status !== "Draft") {
         throw new ApiError(
-            404,
-            "Trip not found"
+            400,
+            `Only draft trips can be updated. Current status is ${trip.status}.`
         );
     }
 
-    // Basic validation
     if (
         !source ||
         !destination ||
@@ -198,66 +248,18 @@ const updateTrip = asyncHandler(async (req, res) => {
         cargoWeight === undefined ||
         plannedDistance === undefined
     ) {
-        throw new ApiError(
-            400,
-            "All fields are required"
-        );
+        throw new ApiError(400, "All fields are required");
     }
 
-    if (Number(cargoWeight) <= 0) {
-        throw new ApiError(
-            400,
-            "Cargo weight must be greater than 0"
-        );
+    const numCargo = Number(cargoWeight);
+    const numDist = Number(plannedDistance);
+
+    if (!Number.isFinite(numCargo) || numCargo <= 0) {
+        throw new ApiError(400, "Cargo weight must be a number greater than 0");
     }
 
-    if (Number(plannedDistance) <= 0) {
-        throw new ApiError(
-            400,
-            "Planned distance must be greater than 0"
-        );
-    }
-
-    // Find new vehicle
-    const vehicleExists = await Vehicle.findById(vehicle);
-
-    if (!vehicleExists) {
-        throw new ApiError(
-            404,
-            "Vehicle not found"
-        );
-    }
-
-    // Find new driver
-    const driverExists = await Driver.findById(driver);
-
-    if (!driverExists) {
-        throw new ApiError(
-            404,
-            "Driver not found"
-        );
-    }
-
-    // Check capacity
-    if (
-        Number(cargoWeight) >
-        vehicleExists.maxLoadCapacity
-    ) {
-        throw new ApiError(
-            400,
-            "Cargo weight exceeds vehicle's maximum load capacity"
-        );
-    }
-
-    // Check license
-    if (
-        driverExists.licenseExpiry &&
-        new Date(driverExists.licenseExpiry) < new Date()
-    ) {
-        throw new ApiError(
-            400,
-            "Driver's license has expired"
-        );
+    if (!Number.isFinite(numDist) || numDist <= 0) {
+        throw new ApiError(400, "Planned distance must be a number greater than 0");
     }
 
     const oldVehicleId = String(trip.vehicle);
@@ -266,23 +268,40 @@ const updateTrip = asyncHandler(async (req, res) => {
     const newVehicleId = String(vehicle);
     const newDriverId = String(driver);
 
-    // --------------------------------------------------------
-    // Vehicle changed
-    // --------------------------------------------------------
+    // Validate new vehicle
+    const vehicleExists = await Vehicle.findById(vehicle);
+    if (!vehicleExists) {
+        throw new ApiError(404, "Vehicle not found");
+    }
 
+    if (numCargo > vehicleExists.maxLoadCapacity) {
+        throw new ApiError(
+            400,
+            `Cargo weight (${numCargo} kg) exceeds vehicle's maximum load capacity (${vehicleExists.maxLoadCapacity} kg)`
+        );
+    }
+
+    // Validate new driver
+    const driverExists = await Driver.findById(driver);
+    if (!driverExists) {
+        throw new ApiError(404, "Driver not found");
+    }
+
+    if (
+        driverExists.licenseExpiry &&
+        new Date(driverExists.licenseExpiry) < new Date()
+    ) {
+        throw new ApiError(400, "Driver's license has expired");
+    }
+
+    // Reassign vehicle if changed
     if (oldVehicleId !== newVehicleId) {
         if (vehicleExists.status !== "Available") {
-            throw new ApiError(
-                400,
-                "Selected vehicle is not available"
-            );
+            throw new ApiError(400, "Selected vehicle is not available");
         }
 
-        const oldVehicle = await Vehicle.findById(
-            trip.vehicle
-        );
-
-        if (oldVehicle) {
+        const oldVehicle = await Vehicle.findById(trip.vehicle);
+        if (oldVehicle && oldVehicle.status === "OnTrip") {
             oldVehicle.status = "Available";
             await oldVehicle.save();
         }
@@ -291,23 +310,14 @@ const updateTrip = asyncHandler(async (req, res) => {
         await vehicleExists.save();
     }
 
-    // --------------------------------------------------------
-    // Driver changed
-    // --------------------------------------------------------
-
+    // Reassign driver if changed
     if (oldDriverId !== newDriverId) {
         if (driverExists.status !== "Available") {
-            throw new ApiError(
-                400,
-                "Selected driver is not available"
-            );
+            throw new ApiError(400, "Selected driver is not available");
         }
 
-        const oldDriver = await Driver.findById(
-            trip.driver
-        );
-
-        if (oldDriver) {
+        const oldDriver = await Driver.findById(trip.driver);
+        if (oldDriver && oldDriver.status === "OnTrip") {
             oldDriver.status = "Available";
             await oldDriver.save();
         }
@@ -316,20 +326,19 @@ const updateTrip = asyncHandler(async (req, res) => {
         await driverExists.save();
     }
 
-    // Update trip
-    trip.source = source.trim();
-    trip.destination = destination.trim();
+    // Update trip details
+    trip.source = String(source).trim();
+    trip.destination = String(destination).trim();
     trip.vehicle = vehicle;
     trip.driver = driver;
-    trip.cargoWeight = Number(cargoWeight);
-    trip.plannedDistance = Number(plannedDistance);
+    trip.cargoWeight = numCargo;
+    trip.plannedDistance = numDist;
 
     await trip.save();
 
-    // Return populated trip
     const updatedTrip = await Trip.findById(tripId)
-        .populate("vehicle", "registrationNumber name")
-        .populate("driver", "name licenseNumber")
+        .populate("vehicle", "registrationNumber name type maxLoadCapacity")
+        .populate("driver", "name licenseNumber phone safetyScore")
         .select("-__v")
         .lean();
 
@@ -352,39 +361,26 @@ const deleteTrip = asyncHandler(async (req, res) => {
     const trip = await Trip.findById(tripId);
 
     if (!trip) {
-        throw new ApiError(
-            404,
-            "Trip not found"
-        );
+        throw new ApiError(404, "Trip not found");
     }
 
-    // Release vehicle
-    const vehicle = await Vehicle.findById(
-        trip.vehicle
-    );
+    // CRITICAL BUSINESS LOGIC: Only release resources if trip is ACTIVE (Draft or Dispatched).
+    // If the trip was already Completed or Cancelled, resources were released previously,
+    // and resetting vehicle/driver status would corrupt another active trip!
+    if (trip.status === "Draft" || trip.status === "Dispatched") {
+        const vehicle = await Vehicle.findById(trip.vehicle);
+        if (vehicle && vehicle.status === "OnTrip") {
+            vehicle.status = "Available";
+            await vehicle.save();
+        }
 
-    if (
-        vehicle &&
-        vehicle.status === "OnTrip"
-    ) {
-        vehicle.status = "Available";
-        await vehicle.save();
+        const driver = await Driver.findById(trip.driver);
+        if (driver && driver.status === "OnTrip") {
+            driver.status = "Available";
+            await driver.save();
+        }
     }
 
-    // Release driver
-    const driver = await Driver.findById(
-        trip.driver
-    );
-
-    if (
-        driver &&
-        driver.status === "OnTrip"
-    ) {
-        driver.status = "Available";
-        await driver.save();
-    }
-
-    // Delete trip
     await Trip.findByIdAndDelete(tripId);
 
     return res.status(200).json(
@@ -406,27 +402,29 @@ const dispatchTrip = asyncHandler(async (req, res) => {
     const trip = await Trip.findById(tripId);
 
     if (!trip) {
-        throw new ApiError(
-            404,
-            "Trip not found"
-        );
+        throw new ApiError(404, "Trip not found");
     }
 
     if (trip.status !== "Draft") {
         throw new ApiError(
             400,
-            "Only draft trips can be dispatched"
+            `Cannot dispatch trip with status '${trip.status}'. Only Draft trips can be dispatched.`
         );
     }
 
     trip.status = "Dispatched";
-
     await trip.save();
+
+    const populatedTrip = await Trip.findById(tripId)
+        .populate("vehicle", "registrationNumber name type maxLoadCapacity")
+        .populate("driver", "name licenseNumber phone safetyScore")
+        .select("-__v")
+        .lean();
 
     return res.status(200).json(
         new ApiResponse(
             200,
-            trip,
+            populatedTrip,
             "Trip dispatched successfully"
         )
     );
@@ -442,50 +440,43 @@ const finishTrip = asyncHandler(async (req, res) => {
     const trip = await Trip.findById(tripId);
 
     if (!trip) {
-        throw new ApiError(
-            404,
-            "Trip not found"
-        );
+        throw new ApiError(404, "Trip not found");
     }
 
     if (trip.status !== "Dispatched") {
         throw new ApiError(
             400,
-            "Only dispatched trips can be completed"
+            `Cannot complete trip with status '${trip.status}'. Only Dispatched trips can be completed.`
         );
     }
 
-    // Find assigned vehicle
-    const vehicle = await Vehicle.findById(
-        trip.vehicle
-    );
-
-    // Find assigned driver
-    const driver = await Driver.findById(
-        trip.driver
-    );
-
     // Release vehicle
-    if (vehicle) {
+    const vehicle = await Vehicle.findById(trip.vehicle);
+    if (vehicle && vehicle.status === "OnTrip") {
         vehicle.status = "Available";
         await vehicle.save();
     }
 
     // Release driver
-    if (driver) {
+    const driver = await Driver.findById(trip.driver);
+    if (driver && driver.status === "OnTrip") {
         driver.status = "Available";
         await driver.save();
     }
 
-    // Complete trip
     trip.status = "Completed";
-
     await trip.save();
+
+    const populatedTrip = await Trip.findById(tripId)
+        .populate("vehicle", "registrationNumber name type maxLoadCapacity")
+        .populate("driver", "name licenseNumber phone safetyScore")
+        .select("-__v")
+        .lean();
 
     return res.status(200).json(
         new ApiResponse(
             200,
-            trip,
+            populatedTrip,
             "Trip completed successfully"
         )
     );
@@ -501,64 +492,51 @@ const cancelTrip = asyncHandler(async (req, res) => {
     const trip = await Trip.findById(tripId);
 
     if (!trip) {
-        throw new ApiError(
-            404,
-            "Trip not found"
-        );
+        throw new ApiError(404, "Trip not found");
     }
 
-    if (
-        trip.status === "Completed" ||
-        trip.status === "Cancelled"
-    ) {
-        throw new ApiError(
-            400,
-            `Trip is already ${trip.status.toLowerCase()}`
-        );
+    if (trip.status === "Completed") {
+        throw new ApiError(400, "Completed trips cannot be cancelled");
     }
 
-    // Find assigned vehicle
-    const vehicle = await Vehicle.findById(
-        trip.vehicle
-    );
+    if (trip.status === "Cancelled") {
+        throw new ApiError(400, "Trip is already cancelled");
+    }
 
-    // Find assigned driver
-    const driver = await Driver.findById(
-        trip.driver
-    );
-
-    // Release vehicle
-    if (vehicle) {
+    // Release vehicle and driver if active
+    const vehicle = await Vehicle.findById(trip.vehicle);
+    if (vehicle && vehicle.status === "OnTrip") {
         vehicle.status = "Available";
         await vehicle.save();
     }
 
-    // Release driver
-    if (driver) {
+    const driver = await Driver.findById(trip.driver);
+    if (driver && driver.status === "OnTrip") {
         driver.status = "Available";
         await driver.save();
     }
 
-    // Cancel trip
     trip.status = "Cancelled";
-
     await trip.save();
+
+    const populatedTrip = await Trip.findById(tripId)
+        .populate("vehicle", "registrationNumber name type maxLoadCapacity")
+        .populate("driver", "name licenseNumber phone safetyScore")
+        .select("-__v")
+        .lean();
 
     return res.status(200).json(
         new ApiResponse(
             200,
-            trip,
+            populatedTrip,
             "Trip cancelled successfully"
         )
     );
 });
 
-// ============================================================
-// EXPORTS
-// ============================================================
-
 module.exports = {
     getAllTrips,
+    getTripById,
     draftTrip,
     updateTrip,
     deleteTrip,

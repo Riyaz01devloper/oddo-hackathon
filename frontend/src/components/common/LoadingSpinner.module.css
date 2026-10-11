@@ -1,0 +1,31 @@
+.spinnerContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  width: 100%;
+  gap: 12px;
+  color: #64748b;
+}
+
+.spinnerIcon {
+  animation: spin 1s linear infinite;
+  color: #2563eb;
+}
+
+.spinnerText {
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
