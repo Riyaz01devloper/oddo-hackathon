@@ -411,37 +411,7 @@ function Dashboard() {
         </section>
       )}
 
-      {/* ================================
-          AI INSIGHTS PLACEHOLDER
-      ================================= */}
 
-      {!loading && (
-        <section className={styles.aiPanel}>
-          <div className={styles.aiIcon}>✦</div>
-
-          <div className={styles.aiContent}>
-            <span className={styles.aiLabel}>
-              TRANSITOPS AI
-            </span>
-
-            <h2>AI Fleet Insights</h2>
-
-            <p>
-              AI-powered operational insights will
-              appear here once the fleet intelligence
-              module is connected.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            className={styles.aiButton}
-            disabled
-          >
-            Coming soon
-          </button>
-        </section>
-      )}
     </main>
   );
 }
