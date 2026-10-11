@@ -13,6 +13,7 @@ import styles from "./Drivers.module.css";
 import SearchBar from "../../components/drivers/SearchBar/SearchBar";
 import DriverTable from "../../components/drivers/DriverTable/DriverTable";
 import DriverForm from "../../components/drivers/DriverForm/DriverForm";
+import DriverHistoryModal from "../../components/drivers/DriverHistoryModal/DriverHistoryModal";
 
 import {
   getDrivers,
@@ -30,6 +31,7 @@ function Drivers() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState(null);
+  const [historyDriverId, setHistoryDriverId] = useState(null);
 
   // =========================
   // GET DRIVERS
@@ -369,6 +371,7 @@ function Drivers() {
               drivers={filteredDrivers}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onViewHistory={(id) => setHistoryDriverId(id)}
             />
           </div>
         )}
@@ -383,6 +386,14 @@ function Drivers() {
               setEditingDriver(null);
               setIsModalOpen(false);
             }}
+          />
+        )}
+
+        {/* HISTORY MODAL */}
+        {historyDriverId && (
+          <DriverHistoryModal
+            driverId={historyDriverId}
+            onClose={() => setHistoryDriverId(null)}
           />
         )}
 

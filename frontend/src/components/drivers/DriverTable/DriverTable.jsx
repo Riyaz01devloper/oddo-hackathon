@@ -3,6 +3,7 @@ import {
   ShieldCheck,
   Pencil,
   Trash2,
+  History,
 } from "lucide-react";
 
 import styles from "./DriverTable.module.css";
@@ -12,6 +13,7 @@ function DriverTable({
   drivers = [],
   onEdit,
   onDelete,
+  onViewHistory,
 }) {
   return (
     <div className={styles.wrapper}>
@@ -152,6 +154,18 @@ function DriverTable({
 
                     <td>
                       <div className={styles.actions}>
+                        {onViewHistory && (
+                          <button
+                            type="button"
+                            className={styles.editButton}
+                            onClick={() => onViewHistory(driverId)}
+                            title="View driver history"
+                          >
+                            <History size={14} />
+                            <span>History</span>
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           className={styles.editButton}
@@ -160,7 +174,7 @@ function DriverTable({
                           }
                           title="Edit driver"
                         >
-                          <Pencil size={15} />
+                          <Pencil size={14} />
                           <span>Edit</span>
                         </button>
 
@@ -172,7 +186,7 @@ function DriverTable({
                           }
                           title="Delete driver"
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={14} />
                           <span>Delete</span>
                         </button>
                       </div>

@@ -11,10 +11,18 @@ const {
   getRetiredVehicles,
   deleteVehicle,
   updateVehicle,
+  getVehicleHistory,
 } = require("../controllers/vehicle.controller.js");
 
 const verifyJWT = require("../middlewares/auth.middleware.js");
 const authorizeRoles = require("../middlewares/role.middleware.js");
+
+router.get(
+  "/:id/history",
+  verifyJWT,
+  authorizeRoles("Fleet Manager", "Safety Officer", "Financial Analyst", "Driver"),
+  getVehicleHistory
+);
 
 router.post(
   "/",

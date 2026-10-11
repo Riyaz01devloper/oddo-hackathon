@@ -60,6 +60,9 @@ const expenseRoutes = require('./routes/expense.routes.js');
 const fuelRoutes = require('./routes/fuel.routes.js');
 const maintenanceRoutes = require('./routes/maintenance.routes.js');
 const reportRoutes = require('./routes/report.routes.js');
+const auditLogRoutes = require('./routes/auditLog.routes.js');
+const notificationRoutes = require('./routes/notification.routes.js');
+const aiRoutes = require('./routes/ai.routes.js');
 
 app.use('/api/users', userRoutes);
 app.use('/api/user', userRoutes);
@@ -71,6 +74,9 @@ app.use('/api/fuel-logs', fuelRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', reportRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404 Route Handler
 app.use((req, res) => {

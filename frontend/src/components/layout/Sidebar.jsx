@@ -1,87 +1,146 @@
-import { NavLink, useNavigate } from "react-router-dom";
-
+import { useEffect, useState } from "react";
+import { NavLink, useNavigate, Link } from "react-router-dom";
 import {
   LayoutDashboard,
+  Bot,
   Truck,
   Users,
   Route,
   Wrench,
   Wallet,
   BarChart3,
+  Bell,
+  History,
+  ShieldCheck,
   Settings,
   LogOut,
   ChevronRight,
 } from "lucide-react";
 
 import styles from "./Sidebar.module.css";
-
-const menuSections = [
-  {
-    title: "MAIN",
-    items: [
-      {
-        name: "Dashboard",
-        path: "/dashboard",
-        icon: LayoutDashboard,
-      },
-    ],
-  },
-  {
-    title: "FLEET",
-    items: [
-      {
-        name: "Vehicles",
-        path: "/fleet",
-        icon: Truck,
-      },
-      {
-        name: "Drivers",
-        path: "/drivers",
-        icon: Users,
-      },
-      {
-        name: "Trips",
-        path: "/trips",
-        icon: Route,
-      },
-    ],
-  },
-  {
-    title: "OPERATIONS",
-    items: [
-      {
-        name: "Fuel & Expenses",
-        path: "/expenses",
-        icon: Wallet,
-      },
-      {
-        name: "Maintenance",
-        path: "/maintenance",
-        icon: Wrench,
-      },
-      {
-        name: "Analytics",
-        path: "/analytics",
-        icon: BarChart3,
-      },
-    ],
-  },
-];
+import { getNotifications } from "../../services/notificationService";
 
 function Sidebar() {
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const user = JSON.parse(localStorage.getItem("user") || "null");
+  const userRole = user?.role || "Fleet Manager";
+  const userName = user?.name || "Fleet User";
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchUnread = async () => {
+      try {
+        const res = await getNotifications();
+        if (!cancelled) {
+          const count = res.data?.data?.unreadCount || res.data?.unreadCount || 0;
+          setUnreadCount(count);
+        }
+      } catch {
+        // Silently catch in sidebar
+      }
+    };
+
+    fetchUnread();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-
     navigate("/login");
   };
 
-  const userName = user?.name || "Fleet Manager";
-  const userRole = user?.role || "Fleet Manager";
+  // Dynamic menu construction based on authorized role
+  const menuSections = [
+    {
+      title: "MAIN",
+      items: [
+        {
+          name: "Dashboard",
+          path: "/dashboard",
+          icon: LayoutDashboard,
+        },
+        {
+          name: "AI Fleet Copilot",
+          path: "/copilot",
+          icon: Bot,
+        },
+      ],
+    },
+    {
+      title: "FLEET",
+      items: [
+        {
+          name: "Vehicles",
+          path: "/fleet",
+          icon: Truck,
+        },
+        {
+          name: "Drivers",
+          path: "/drivers",
+          icon: Users,
+        },
+        {
+          name: "Trips",
+          path: "/trips",
+          icon: Route,
+        },
+      ],
+    },
+    {
+      title: "OPERATIONS",
+      items: [
+        {
+          name: "Fuel & Expenses",
+          path: "/expenses",
+          icon: Wallet,
+        },
+        {
+          name: "Maintenance",
+          path: "/maintenance",
+          icon: Wrench,
+        },
+        {
+          name: "Analytics",
+          path: "/analytics",
+          icon: BarChart3,
+        },
+      ],
+    },
+    {
+      title: "MONITORING & ACCESS",
+      items: [
+        {
+          name: "Notifications",
+          path: "/notifications",
+          icon: Bell,
+          badge: unreadCount > 0 ? unreadCount : null,
+        },
+        ...(userRole === "Fleet Manager" || userRole === "Safety Officer"
+          ? [
+              {
+                name: "Activity History",
+                path: "/history",
+                icon: History,
+              },
+            ]
+          : []),
+        ...(userRole === "Fleet Manager"
+          ? [
+              {
+                name: "User Directory",
+                path: "/users",
+                icon: ShieldCheck,
+              },
+            ]
+          : []),
+      ],
+    },
+  ];
 
   return (
     <aside className={styles.sidebar}>
@@ -101,9 +160,7 @@ function Sidebar() {
       <nav className={styles.navigation}>
         {menuSections.map((section) => (
           <div className={styles.section} key={section.title}>
-            <div className={styles.sectionTitle}>
-              {section.title}
-            </div>
+            <div className={styles.sectionTitle}>{section.title}</div>
 
             <div className={styles.sectionItems}>
               {section.items.map((item) => {
@@ -115,23 +172,20 @@ function Sidebar() {
                     to={item.path}
                     title={item.name}
                     className={({ isActive }) =>
-                      `${styles.link} ${
-                        isActive ? styles.active : ""
-                      }`
+                      `${styles.link} ${isActive ? styles.active : ""}`
                     }
                   >
                     <span className={styles.icon}>
                       <Icon size={19} strokeWidth={2} />
                     </span>
 
-                    <span className={styles.linkText}>
-                      {item.name}
-                    </span>
+                    <span className={styles.linkText}>{item.name}</span>
 
-                    <ChevronRight
-                      size={15}
-                      className={styles.arrow}
-                    />
+                    {item.badge && (
+                      <span className={styles.badge}>{item.badge}</span>
+                    )}
+
+                    <ChevronRight size={15} className={styles.arrow} />
                   </NavLink>
                 );
               })}
@@ -154,14 +208,11 @@ function Sidebar() {
 
           <span className={styles.linkText}>Settings</span>
 
-          <ChevronRight
-            size={15}
-            className={styles.arrow}
-          />
+          <ChevronRight size={15} className={styles.arrow} />
         </NavLink>
 
-        {/* User */}
-        <div className={styles.userCard}>
+        {/* User Card -> Links directly to Profile */}
+        <Link to="/profile" className={styles.userCard} title="View and edit profile">
           <div className={styles.avatar}>
             {userName.charAt(0).toUpperCase()}
           </div>
@@ -170,7 +221,7 @@ function Sidebar() {
             <strong>{userName}</strong>
             <span>{userRole}</span>
           </div>
-        </div>
+        </Link>
 
         {/* Logout */}
         <button

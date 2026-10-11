@@ -12,13 +12,18 @@ import LoadingSpinner from "./components/common/LoadingSpinner";
 
 // Lazy-loaded Main Pages
 const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
+const Copilot = lazy(() => import("./pages/copilot/Copilot"));
 const Fleet = lazy(() => import("./pages/fleet/Fleet"));
 const Drivers = lazy(() => import("./pages/drivers/Drivers"));
 const Trips = lazy(() => import("./pages/trips/Trips"));
 const FuelExpenses = lazy(() => import("./pages/expenses/FuelExpenses"));
 const Maintenance = lazy(() => import("./pages/maintenance/Maintenance"));
 const Analytics = lazy(() => import("./pages/analytics/Analytics"));
+const Profile = lazy(() => import("./pages/profile/Profile"));
 const Settings = lazy(() => import("./pages/settings/Settings"));
+const Users = lazy(() => import("./pages/users/Users"));
+const ActivityHistory = lazy(() => import("./pages/history/ActivityHistory"));
+const Notifications = lazy(() => import("./pages/notifications/Notifications"));
 
 // Lazy-loaded Auth Pages
 const Login = lazy(() => import("./pages/auth/Login"));
@@ -67,6 +72,10 @@ const router = createBrowserRouter([
         element: <Dashboard />,
       },
       {
+        path: "copilot",
+        element: <Copilot />,
+      },
+      {
         path: "fleet",
         element: <Fleet />,
       },
@@ -93,6 +102,22 @@ const router = createBrowserRouter([
       {
         path: "analytics",
         element: <Analytics />,
+      },
+      {
+        path: "notifications",
+        element: <Notifications />,
+      },
+      {
+        path: "history",
+        element: <ActivityHistory />,
+      },
+      {
+        path: "users",
+        element: <Users />,
+      },
+      {
+        path: "profile",
+        element: <Profile />,
       },
       {
         path: "settings",

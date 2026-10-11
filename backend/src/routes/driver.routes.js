@@ -10,7 +10,8 @@ const {
   getOffDutyDrivers,
   getSuspendedDrivers,
   deleteDriver,
-  updateDriver
+  updateDriver,
+  getDriverHistory
 } = require('../controllers/driver.controller.js');
 const verifyJWT = require('../middlewares/auth.middleware.js');
 const authorizeRoles = require('../middlewares/role.middleware.js');
@@ -21,6 +22,7 @@ router.get('/available', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Offi
 router.get('/on-trip', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Officer', 'Financial Analyst'), getOnTripDrivers);
 router.get('/off-duty', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Officer', 'Financial Analyst'), getOffDutyDrivers);
 router.get('/suspended', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Officer', 'Financial Analyst'), getSuspendedDrivers);
+router.get('/:id/history', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Officer', 'Financial Analyst', 'Driver'), getDriverHistory);
 router.get('/:id', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Officer', 'Financial Analyst'), getDriverById);
 router.put('/:id', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Officer'), updateDriver);
 router.delete('/:id', verifyJWT, authorizeRoles('Fleet Manager', 'Safety Officer'), deleteDriver);

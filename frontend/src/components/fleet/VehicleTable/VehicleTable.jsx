@@ -3,12 +3,13 @@ import {
   Gauge,
   Pencil,
   Trash2,
+  History,
 } from "lucide-react";
 
 import styles from "./VehicleTable.module.css";
 import StatusBadge from "../StatusBadge/StatusBadge";
 
-function VehicleTable({ vehicles = [], onEdit, onDelete }) {
+function VehicleTable({ vehicles = [], onEdit, onDelete, onViewHistory }) {
   return (
     <div className={styles.wrapper}>
       <div className={styles.tableScroll}>
@@ -100,6 +101,18 @@ function VehicleTable({ vehicles = [], onEdit, onDelete }) {
                     {/* ACTIONS */}
                     <td>
                       <div className={styles.actions}>
+                        {onViewHistory && (
+                          <button
+                            type="button"
+                            className={styles.editBtn}
+                            onClick={() => onViewHistory(vehicleId)}
+                            title="View vehicle lifecycle history"
+                          >
+                            <History size={14} />
+                            <span>History</span>
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           className={styles.editBtn}
@@ -108,7 +121,7 @@ function VehicleTable({ vehicles = [], onEdit, onDelete }) {
                           }
                           title="Edit vehicle"
                         >
-                          <Pencil size={15} />
+                          <Pencil size={14} />
                           <span>Edit</span>
                         </button>
 
@@ -120,7 +133,7 @@ function VehicleTable({ vehicles = [], onEdit, onDelete }) {
                           }
                           title="Delete vehicle"
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={14} />
                           <span>Delete</span>
                         </button>
                       </div>

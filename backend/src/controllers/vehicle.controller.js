@@ -1,4 +1,8 @@
 const Vehicle = require("../models/vehicle.model.js");
+const Trip = require("../models/trip.model.js");
+const Maintenance = require("../models/maintenance.model.js");
+const FuelLog = require("../models/fuellog.model.js");
+const Expense = require("../models/expense.model.js");
 const asyncHandler = require("../utils/asyncHandler.js");
 const ApiError = require("../utils/ApiError.js");
 const ApiResponse = require("../utils/ApiResponse.js");
@@ -283,6 +287,77 @@ const deleteVehicle = asyncHandler(async (req, res) => {
   });
 });
 
+// GET VEHICLE HISTORY
+const getVehicleHistory = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const vehicle = await Vehicle.findById(id).select("-__v").lean();
+  if (!vehicle) {
+    throw new ApiError(404, "Vehicle not found");
+  }
+
+  const [trips, maintenance, fuelLogs, expenses] = await Promise.all([
+    Trip.find({ vehicle: id })
+      .populate("driver", "name phone licenseNumber")
+      .sort({ createdAt: -1 })
+      .lean(),
+    Maintenance.find({ vehicle: id })
+      .sort({ serviceDate: -1, createdAt: -1 })
+      .lean(),
+    FuelLog.find({ vehicle: id })
+      .sort({ date: -1 })
+      .lean(),
+    Expense.find({ vehicle: id })
+      .sort({ date: -1, createdAt: -1 })
+      .lean()
+  ]);
+
+  const activeTrip = trips.find((t) => t.status === "Dispatched") || null;
+  const completedTrips = trips.filter((t) => t.status === "Completed");
+  const totalDistance = completedTrips.reduce(
+    (sum, t) => sum + (Number(t.plannedDistance) || 0),
+    0
+  );
+
+  const totalMaintenanceCost = maintenance.reduce(
+    (sum, m) => sum + (Number(m.cost) || 0),
+    0
+  );
+  const totalFuelCost = fuelLogs.reduce(
+    (sum, f) => sum + (Number(f.totalCost) || 0),
+    0
+  );
+  const totalOtherExpenses = expenses.reduce(
+    (sum, e) => sum + (Number(e.amount) || 0),
+    0
+  );
+  const totalOperatingCost = totalMaintenanceCost + totalFuelCost + totalOtherExpenses;
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        vehicle,
+        trips,
+        maintenance,
+        fuelLogs,
+        expenses,
+        stats: {
+          totalTrips: trips.length,
+          completedTripsCount: completedTrips.length,
+          activeTrip,
+          totalDistance,
+          totalMaintenanceCost,
+          totalFuelCost,
+          totalOtherExpenses,
+          totalOperatingCost
+        }
+      },
+      "Vehicle history retrieved successfully"
+    )
+  );
+});
+
 module.exports = {
   registerVehicle,
   getAllVehicles,
@@ -293,4 +368,5 @@ module.exports = {
   getRetiredVehicles,
   deleteVehicle,
   updateVehicle,
+  getVehicleHistory
 };

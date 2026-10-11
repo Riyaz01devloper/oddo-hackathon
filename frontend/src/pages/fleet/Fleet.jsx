@@ -11,6 +11,7 @@ import styles from "./Fleet.module.css";
 import SearchBar from "../../components/fleet/SearchBar/SearchBar";
 import VehicleTable from "../../components/fleet/VehicleTable/VehicleTable";
 import VehicleForm from "../../components/fleet/VehicleForm/VehicleForm";
+import VehicleHistoryModal from "../../components/fleet/VehicleHistoryModal/VehicleHistoryModal";
 
 import {
   getVehicles,
@@ -29,6 +30,7 @@ function Fleet() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
+  const [historyVehicleId, setHistoryVehicleId] = useState(null);
 
   // =========================
   // GET VEHICLES
@@ -374,6 +376,7 @@ function Fleet() {
               vehicles={filteredVehicles}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onViewHistory={(id) => setHistoryVehicleId(id)}
             />
           </div>
         )}
@@ -388,6 +391,14 @@ function Fleet() {
               setEditingVehicle(null);
               setIsModalOpen(false);
             }}
+          />
+        )}
+
+        {/* HISTORY MODAL */}
+        {historyVehicleId && (
+          <VehicleHistoryModal
+            vehicleId={historyVehicleId}
+            onClose={() => setHistoryVehicleId(null)}
           />
         )}
 

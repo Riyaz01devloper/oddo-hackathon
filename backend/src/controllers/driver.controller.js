@@ -1,7 +1,9 @@
 const Driver = require("../models/driver.model.js");
+const Trip = require("../models/trip.model.js");
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
+const { recordAuditLog } = require("../utils/auditLogger");
 
 // REGISTER DRIVER
 const registerDriver = asyncHandler(async (req, res) => {
@@ -205,6 +207,60 @@ const updateDriver = asyncHandler(async (req, res) => {
     );
 });
 
+// GET DRIVER HISTORY
+const getDriverHistory = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const driver = await Driver.findById(id).select("-__v").lean();
+    if (!driver) {
+        throw new ApiError(404, "Driver not found");
+    }
+
+    const trips = await Trip.find({ driver: id })
+        .populate("vehicle", "name registrationNumber type maxLoadCapacity")
+        .sort({ createdAt: -1 })
+        .lean();
+
+    const activeTrip = trips.find((t) => t.status === "Dispatched") || null;
+    const completedTrips = trips.filter((t) => t.status === "Completed");
+    const cancelledTrips = trips.filter((t) => t.status === "Cancelled");
+    const draftTrips = trips.filter((t) => t.status === "Draft");
+
+    const totalDistance = completedTrips.reduce(
+        (sum, t) => sum + (Number(t.plannedDistance) || 0),
+        0
+    );
+
+    const now = new Date();
+    const expiryDate = new Date(driver.licenseExpiry);
+    const daysUntilLicenseExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+    const isLicenseExpired = daysUntilLicenseExpiry <= 0;
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                driver,
+                trips,
+                stats: {
+                    totalTrips: trips.length,
+                    completedTripsCount: completedTrips.length,
+                    cancelledTripsCount: cancelledTrips.length,
+                    draftTripsCount: draftTrips.length,
+                    activeTrip,
+                    totalDistance,
+                    completionRate: trips.length > 0
+                        ? Math.round((completedTrips.length / trips.length) * 100)
+                        : 0,
+                    daysUntilLicenseExpiry,
+                    isLicenseExpired,
+                },
+            },
+            "Driver history retrieved successfully"
+        )
+    );
+});
+
 module.exports = {
     registerDriver,
     getAllDrivers,
@@ -214,5 +270,6 @@ module.exports = {
     getOffDutyDrivers,
     getSuspendedDrivers,
     deleteDriver,
-    updateDriver
+    updateDriver,
+    getDriverHistory
 };
