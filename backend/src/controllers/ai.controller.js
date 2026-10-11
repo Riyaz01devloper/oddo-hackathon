@@ -121,7 +121,7 @@ function buildDeterministicAnswer(intent, toolData, question) {
 
 // Call Google Gemini REST API with Grounded Data
 async function callGeminiApi(apiKey, question, groundedContext) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
     const systemPrompt = `You are the TransitOps AI Fleet Copilot, a professional, grounded AI assistant for fleet managers, safety officers, and operations teams.
 CRITICAL GROUNDING RULES:
