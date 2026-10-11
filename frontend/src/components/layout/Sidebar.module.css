@@ -379,73 +379,89 @@
   border-radius: 10px;
 }
 
+.mobileCloseBtn {
+  display: none;
+}
+
+.backdrop {
+  display: none;
+}
+
+.installAppBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.15s ease;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.installAppBtn:hover {
+  background: #1d4ed8;
+}
+
+.installAppBtn:active {
+  transform: scale(0.98);
+}
+
 /* ================================
-   RESPONSIVE
+   RESPONSIVE (MOBILE DRAWER)
 ================================ */
 
 @media (max-width: 768px) {
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 1400;
+    animation: fadeInBackdrop 0.25s ease;
+  }
+
+  @keyframes fadeInBackdrop {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
   .sidebar {
-    width: 72px;
+    width: 285px;
+    max-width: 85vw;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1500;
+    box-shadow: 12px 0 35px rgba(0, 0, 0, 0.5);
   }
 
-  .logoSection {
+  .open {
+    transform: translateX(0);
+  }
+
+  .mobileCloseBtn {
+    display: flex;
+    align-items: center;
     justify-content: center;
-
-    padding: 0;
+    margin-left: auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+    border: none;
+    cursor: pointer;
   }
 
-  .logoText {
-    display: none;
+  .mobileCloseBtn:active {
+    background: rgba(255, 255, 255, 0.18);
   }
-
-  .navigation {
-    padding: 20px 10px;
-  }
-
-  .sectionTitle {
-    display: none;
-  }
-
-  .link {
-    justify-content: center;
-
-    padding: 0;
-  }
-
-  .linkText,
-  .arrow {
-    display: none;
-  }
-
-  .icon {
-    width: auto;
-  }
-
-  .bottomSection {
-    padding: 10px 8px;
-  }
-
-  .bottomSection > .link {
-    justify-content: center;
-  }
-
-  .userCard {
-    justify-content: center;
-
-    padding: 8px;
-  }
-
-  .userInfo {
-    display: none;
-  }
-
-  .logoutButton {
-    justify-content: center;
-
-    padding: 10px 0;
-  }
-
-  .logoutButton span {
-    display: none;
-  }
-}
+}

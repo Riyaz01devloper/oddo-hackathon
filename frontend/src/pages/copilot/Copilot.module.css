@@ -332,10 +332,48 @@
 
 @media (max-width: 768px) {
   .container {
-    height: calc(100vh - 120px);
+    height: calc(100vh - 145px);
   }
+
+  .header h1 {
+    font-size: 20px;
+  }
+
   .messageRow {
-    max-width: 96%;
+    max-width: 98%;
+  }
+
+  .chatInput {
+    font-size: 16px; /* Prevents auto-zoom in iOS Safari */
+    height: 42px;
+  }
+
+  .inputForm {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .sendButton {
+    height: 42px;
+    padding: 0 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    height: calc(100vh - 135px);
+  }
+
+  .header {
+    margin-bottom: 10px;
+  }
+
+  .chatCard {
+    border-radius: 10px;
+  }
+
+  .sendButton span {
+    display: none;
   }
 }
 

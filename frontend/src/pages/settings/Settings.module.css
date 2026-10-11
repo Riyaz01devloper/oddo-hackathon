@@ -339,9 +339,33 @@
 @media (max-width: 768px) {
   .layout {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
+
+  .navMenu {
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+    gap: 8px;
+  }
+
+  .navItem {
+    white-space: nowrap;
+    padding: 8px 14px;
+    font-size: 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color, #e2e8f0);
+  }
+
+  .contentCard {
+    padding: 18px 16px;
+    border-radius: 12px;
+  }
+
   .themeGrid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 

@@ -15,14 +15,18 @@ import {
   Settings,
   LogOut,
   ChevronRight,
+  Download,
+  X,
 } from "lucide-react";
 
 import styles from "./Sidebar.module.css";
 import { getNotifications } from "../../services/notificationService";
+import { promptPwaInstall, isAppInstalled, subscribePwaPrompt } from "../../utils/pwaInstall";
 
-function Sidebar() {
+function Sidebar({ isOpen = false, onClose }) {
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [canInstall, setCanInstall] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const userRole = user?.role || "Fleet Manager";
@@ -43,15 +47,32 @@ function Sidebar() {
     };
 
     fetchUnread();
+    const unsub = subscribePwaPrompt((ready) => {
+      setCanInstall(ready && !isAppInstalled());
+    });
+
     return () => {
       cancelled = true;
+      unsub();
     };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    onClose?.();
     navigate("/login");
+  };
+
+  const handleInstallClick = async () => {
+    const res = await promptPwaInstall();
+    if (res.outcome === "ios") {
+      alert("To install on iOS: Tap Share (⎋) in Safari and choose 'Add to Home Screen' (⊕).");
+    }
+  };
+
+  const handleLinkClick = () => {
+    onClose?.();
   };
 
   // Dynamic menu construction based on authorized role
@@ -143,97 +164,137 @@ function Sidebar() {
   ];
 
   return (
-    <aside className={styles.sidebar}>
-      {/* Logo */}
-      <div className={styles.logoSection}>
-        <div className={styles.logoIcon}>
-          <Truck size={21} strokeWidth={2.2} />
+    <>
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div
+          className={styles.backdrop}
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside className={`${styles.sidebar} ${isOpen ? styles.open : ""}`}>
+        {/* Logo Section */}
+        <div className={styles.logoSection}>
+          <div className={styles.logoIcon}>
+            <Truck size={21} strokeWidth={2.2} />
+          </div>
+
+          <div className={styles.logoText}>
+            <h2>TransitOps</h2>
+            <span>Fleet Intelligence</span>
+          </div>
+
+          {/* Mobile close button */}
+          <button
+            type="button"
+            className={styles.mobileCloseBtn}
+            onClick={onClose}
+            aria-label="Close navigation"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        <div className={styles.logoText}>
-          <h2>TransitOps</h2>
-          <span>Fleet Intelligence</span>
-        </div>
-      </div>
+        {/* Navigation */}
+        <nav className={styles.navigation}>
+          {menuSections.map((section) => (
+            <div className={styles.section} key={section.title}>
+              <div className={styles.sectionTitle}>{section.title}</div>
 
-      {/* Navigation */}
-      <nav className={styles.navigation}>
-        {menuSections.map((section) => (
-          <div className={styles.section} key={section.title}>
-            <div className={styles.sectionTitle}>{section.title}</div>
+              <div className={styles.sectionItems}>
+                {section.items.map((item) => {
+                  const Icon = item.icon;
 
-            <div className={styles.sectionItems}>
-              {section.items.map((item) => {
-                const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.name}
+                      to={item.path}
+                      title={item.name}
+                      onClick={handleLinkClick}
+                      className={({ isActive }) =>
+                        `${styles.link} ${isActive ? styles.active : ""}`
+                      }
+                    >
+                      <span className={styles.icon}>
+                        <Icon size={19} strokeWidth={2} />
+                      </span>
 
-                return (
-                  <NavLink
-                    key={item.name}
-                    to={item.path}
-                    title={item.name}
-                    className={({ isActive }) =>
-                      `${styles.link} ${isActive ? styles.active : ""}`
-                    }
-                  >
-                    <span className={styles.icon}>
-                      <Icon size={19} strokeWidth={2} />
-                    </span>
+                      <span className={styles.linkText}>{item.name}</span>
 
-                    <span className={styles.linkText}>{item.name}</span>
+                      {item.badge && (
+                        <span className={styles.badge}>{item.badge}</span>
+                      )}
 
-                    {item.badge && (
-                      <span className={styles.badge}>{item.badge}</span>
-                    )}
-
-                    <ChevronRight size={15} className={styles.arrow} />
-                  </NavLink>
-                );
-              })}
+                      <ChevronRight size={15} className={styles.arrow} />
+                    </NavLink>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
-      </nav>
+          ))}
+        </nav>
 
-      {/* Bottom section */}
-      <div className={styles.bottomSection}>
-        <NavLink
-          to="/settings"
-          className={({ isActive }) =>
-            `${styles.link} ${isActive ? styles.active : ""}`
-          }
-        >
-          <span className={styles.icon}>
-            <Settings size={19} strokeWidth={2} />
-          </span>
+        {/* Bottom section */}
+        <div className={styles.bottomSection}>
+          {/* Install App button if available */}
+          {canInstall && (
+            <button
+              type="button"
+              className={styles.installAppBtn}
+              onClick={handleInstallClick}
+            >
+              <Download size={16} />
+              <span>Install Mobile App</span>
+            </button>
+          )}
 
-          <span className={styles.linkText}>Settings</span>
+          <NavLink
+            to="/settings"
+            onClick={handleLinkClick}
+            className={({ isActive }) =>
+              `${styles.link} ${isActive ? styles.active : ""}`
+            }
+          >
+            <span className={styles.icon}>
+              <Settings size={19} strokeWidth={2} />
+            </span>
 
-          <ChevronRight size={15} className={styles.arrow} />
-        </NavLink>
+            <span className={styles.linkText}>Settings</span>
 
-        {/* User Card -> Links directly to Profile */}
-        <Link to="/profile" className={styles.userCard} title="View and edit profile">
-          <div className={styles.avatar}>
-            {userName.charAt(0).toUpperCase()}
-          </div>
+            <ChevronRight size={15} className={styles.arrow} />
+          </NavLink>
 
-          <div className={styles.userInfo}>
-            <strong>{userName}</strong>
-            <span>{userRole}</span>
-          </div>
-        </Link>
+          {/* User Card -> Links directly to Profile */}
+          <Link
+            to="/profile"
+            onClick={handleLinkClick}
+            className={styles.userCard}
+            title="View and edit profile"
+          >
+            <div className={styles.avatar}>
+              {userName.charAt(0).toUpperCase()}
+            </div>
 
-        {/* Logout */}
-        <button
-          type="button"
-          className={styles.logoutButton}
-          onClick={handleLogout}
-        >
-          <LogOut size={18} />
-          <span>Sign out</span>
-        </button>
-      </div>
-    </aside>
+            <div className={styles.userInfo}>
+              <strong>{userName}</strong>
+              <span>{userRole}</span>
+            </div>
+          </Link>
+
+          {/* Logout */}
+          <button
+            type="button"
+            className={styles.logoutButton}
+            onClick={handleLogout}
+          >
+            <LogOut size={18} />
+            <span>Sign out</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
 
